@@ -8,6 +8,11 @@
   box-sizing: border-box;
 }
 
+html {
+  height: 100%;
+  height: -webkit-fill-available;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
@@ -17,24 +22,41 @@ body {
   background-color: #0a0a0a;
   color: white;
   overflow-x: hidden;
+  height: 100%;
+  height: -webkit-fill-available;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #root {
-  min-height: 100vh;
+  height: 100%;
+  height: -webkit-fill-available;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Safe area support for iOS */
+.h-safe-top {
+  height: env(safe-area-inset-top);
+}
+
+.pb-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1a1a;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #00d4ff;
-  border-radius: 3px;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -53,29 +75,69 @@ body {
 
 @keyframes glow {
   0% {
-    box-shadow: 0 0 5px #00d4ff, 0 0 10px #00d4ff, 0 0 15px #00d4ff;
+    box-shadow: 0 0 10px #00d4ff, 0 0 20px #00d4ff, 0 0 30px #00d4ff;
   }
   100% {
-    box-shadow: 0 0 10px #00d4ff, 0 0 20px #00d4ff, 0 0 30px #00d4ff;
+    box-shadow: 0 0 20px #00d4ff, 0 0 30px #00d4ff, 0 0 40px #00d4ff;
   }
 }
 
 /* Mobile optimizations */
 @media (max-width: 768px) {
   body {
-    font-size: 14px;
-  }
-  
-  .message {
-    max-width: 90%;
+    font-size: 16px;
   }
 }
 
-/* Prevent zoom on input focus on iOS */
-@media screen and (-webkit-min-device-pixel-ratio: 0) {
-  select,
-  textarea,
-  input {
-    font-size: 16px;
+/* Prevent zoom on input focus */
+input, textarea, select {
+  font-size: 16px !important;
+  transform: translateZ(0);
+  -webkit-appearance: none;
+  border-radius: 0;
+}
+
+/* Touch improvements */
+button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar on mobile */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    display: none;
   }
+  
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* PWA splash screen */
+@media (display-mode: standalone) {
+  body {
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+}
+
+/* Loading animation for voice bars */
+@keyframes voice-bar {
+  0%, 100% {
+    height: 15px;
+  }
+  50% {
+    height: 35px;
+  }
+}
+
+.animate-voice-bar {
+  animation: voice-bar 0.8s ease-in-out infinite;
 }
