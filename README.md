@@ -43,7 +43,7 @@ A sophisticated AI assistant mobile app inspired by Iron Man's JARVIS, featuring
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/inertz/jarvis-ai-assistant.git
+   git clone https://github.com/inertz/jarvis.git
    cd jarvis-ai-assistant
    ```
 
@@ -205,8 +205,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/jarvis-ai-assistant/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/jarvis-ai-assistant/discussions)
+- **Issues**: [GitHub Issues](https://github.com/yourusername/jarvis/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/jarvis/discussions)
 - **Email**: your.email@example.com
 
 ## 🔮 Roadmap
