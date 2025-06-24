@@ -43,7 +43,7 @@ A sophisticated AI assistant mobile app inspired by Iron Man's JARVIS, featuring
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/jarvis-ai-assistant.git
+   git clone https://github.com/inertz/jarvis-ai-assistant.git
    cd jarvis-ai-assistant
    ```
 
