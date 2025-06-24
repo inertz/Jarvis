@@ -207,7 +207,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Issues**: [GitHub Issues](https://github.com/yourusername/jarvis/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/yourusername/jarvis/discussions)
-- **Email**: your.email@example.com
+- **Email**: webmaster@inertz.org
 
 ## 🔮 Roadmap
 
@@ -223,8 +223,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-**Made with ❤️ by [Your Name](https://github.com/inertz)**
+**Made with ❤️ by [inertz](https://github.com/inertz)**
 
-[⭐ Star this repo](https://github.com/yourusername/jarvis-ai-assistant) • [🐛 Report Bug](https://github.com/yourusername/jarvis-ai-assistant/issues) • [✨ Request Feature](https://github.com/yourusername/jarvis-ai-assistant/issues)
+[⭐ Star this repo](https://github.com/yourusername/jarvis) • [🐛 Report Bug](https://github.com/yourusername/jarvis/issues) • [✨ Request Feature](https://github.com/yourusername/jarvis/issues)
 
 </div>
