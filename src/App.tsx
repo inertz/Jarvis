@@ -1,12 +1,26 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, MicOff, Volume2, VolumeX, Send, Menu, Settings, Zap } from 'lucide-react';
+import { SettingsPanel } from './components/SettingsPanel';
+import { AIService } from './services/aiService';
+import { useLocalStorage } from './hooks/useLocalStorage';
+import { Message, AppSettings } from './types';
 
-interface Message {
-  id: string;
-  text: string;
-  isUser: boolean;
-  timestamp: Date;
-}
+const defaultSettings: AppSettings = {
+  audioEnabled: true,
+  aiProvider: 'local',
+  openai: {
+    name: 'OpenAI',
+    apiKey: '',
+    model: 'gpt-3.5-turbo',
+    enabled: false
+  },
+  deepseek: {
+    name: 'DeepSeek',
+    apiKey: '',
+    model: 'deepseek-chat',
+    enabled: false
+  }
+};
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([
@@ -20,12 +34,21 @@ function App() {
   const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [audioEnabled, setAudioEnabled] = useState(true);
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showMenu, setShowMenu] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [settings, setSettings] = useLocalStorage<AppSettings>('jarvis-settings', defaultSettings);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const aiServiceRef = useRef<AIService>(new AIService(settings));
+
+  // Update AI service when settings change
+  useEffect(() => {
+    aiServiceRef.current.updateSettings(settings);
+  }, [settings]);
 
   // Handle online/offline status
   useEffect(() => {
@@ -65,7 +88,6 @@ function App() {
 
       recognitionInstance.onstart = () => {
         setIsListening(true);
-        // Haptic feedback
         if ('vibrate' in navigator) {
           navigator.vibrate(50);
         }
@@ -75,7 +97,6 @@ function App() {
         const transcript = event.results[0][0].transcript;
         setInputText(transcript);
         setIsListening(false);
-        // Auto-send after voice input
         setTimeout(() => {
           handleSendMessage(transcript);
         }, 500);
@@ -106,66 +127,16 @@ function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const generateResponse = useCallback((userMessage: string): string => {
-    const message = userMessage.toLowerCase();
-    
-    if (message.includes('hello') || message.includes('hi') || message.includes('hey')) {
-      return 'Hello, sir. It\'s a pleasure to assist you today.';
-    }
-    
-    if (message.includes('time') || message.includes('what time')) {
-      const now = new Date();
-      return `The current time is ${now.toLocaleTimeString()}, sir.`;
-    }
-    
-    if (message.includes('date') || message.includes('what date')) {
-      const now = new Date();
-      return `Today is ${now.toLocaleDateString()}, sir.`;
-    }
-    
-    if (message.includes('weather')) {
-      return 'I apologize, sir, but I don\'t currently have access to weather data. Perhaps you could check your preferred weather application?';
-    }
-    
-    if (message.includes('how are you') || message.includes('how do you feel')) {
-      return 'I\'m functioning at optimal capacity, sir. All systems are running smoothly.';
-    }
-    
-    if (message.includes('thank you') || message.includes('thanks')) {
-      return 'You\'re most welcome, sir. Always happy to be of service.';
-    }
-    
-    if (message.includes('goodbye') || message.includes('bye')) {
-      return 'Farewell, sir. I\'ll be here whenever you need assistance.';
-    }
-    
-    if (message.includes('help')) {
-      return 'I\'m here to assist you, sir. You can ask me about the time, date, or simply have a conversation. How may I help you today?';
-    }
-
-    if (message.includes('battery') || message.includes('power')) {
-      return 'I\'m running on your device\'s power, sir. My energy levels are stable and ready for extended operation.';
-    }
-
-    if (message.includes('offline') || message.includes('internet')) {
-      return isOnline ? 'We have a stable connection, sir. All systems are online.' : 'We appear to be offline, sir, but I can still assist you with basic functions.';
-    }
-    
-    return 'I understand, sir. While I\'m still learning, I\'m here to assist you to the best of my abilities. Is there anything specific you\'d like to know?';
-  }, [isOnline]);
-
   const speak = useCallback((text: string) => {
-    if (!audioEnabled) return;
+    if (!settings.audioEnabled) return;
     
     if ('speechSynthesis' in window) {
       setIsSpeaking(true);
       
-      // Stop any current speech
       speechSynthesis.cancel();
       
       const utterance = new SpeechSynthesisUtterance(text);
       
-      // Wait for voices to load
       const setVoice = () => {
         const voices = speechSynthesis.getVoices();
         const britishVoice = voices.find(voice => 
@@ -201,11 +172,11 @@ function App() {
       
       speechSynthesis.speak(utterance);
     }
-  }, [audioEnabled]);
+  }, [settings.audioEnabled]);
 
-  const handleSendMessage = useCallback((messageText?: string) => {
+  const handleSendMessage = useCallback(async (messageText?: string) => {
     const text = messageText || inputText;
-    if (!text.trim()) return;
+    if (!text.trim() || isProcessing) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -215,29 +186,43 @@ function App() {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    setIsProcessing(true);
 
-    // Haptic feedback
     if ('vibrate' in navigator) {
       navigator.vibrate(30);
     }
 
-    // Generate and add AI response
-    setTimeout(() => {
-      const responseText = generateResponse(text);
-      const aiMessage: Message = {
+    try {
+      const responseText = await aiServiceRef.current.generateResponse(text);
+      
+      setTimeout(() => {
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: responseText,
+          isUser: false,
+          timestamp: new Date()
+        };
+
+        setMessages(prev => [...prev, aiMessage]);
+        speak(responseText);
+        setIsProcessing(false);
+      }, 800);
+    } catch (error) {
+      console.error('Error generating response:', error);
+      const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: responseText,
+        text: 'I apologize, sir. I encountered a technical difficulty. Please try again.',
         isUser: false,
         timestamp: new Date()
       };
-
-      setMessages(prev => [...prev, aiMessage]);
-      speak(responseText);
-    }, 800);
+      
+      setMessages(prev => [...prev, errorMessage]);
+      setIsProcessing(false);
+    }
 
     setInputText('');
     inputRef.current?.blur();
-  }, [inputText, generateResponse, speak]);
+  }, [inputText, isProcessing, speak]);
 
   const startListening = useCallback(() => {
     if (recognition && !isListening) {
@@ -257,20 +242,32 @@ function App() {
   };
 
   const toggleAudio = () => {
-    setAudioEnabled(!audioEnabled);
+    const newSettings = { ...settings, audioEnabled: !settings.audioEnabled };
+    setSettings(newSettings);
+    
     if (isSpeaking) {
       speechSynthesis.cancel();
       setIsSpeaking(false);
     }
-    // Haptic feedback
+    
     if ('vibrate' in navigator) {
       navigator.vibrate(50);
     }
   };
 
+  const getProviderStatus = () => {
+    switch (settings.aiProvider) {
+      case 'openai':
+        return settings.openai.enabled && settings.openai.apiKey ? 'OpenAI Connected' : 'OpenAI (Not Configured)';
+      case 'deepseek':
+        return settings.deepseek.enabled && settings.deepseek.apiKey ? 'DeepSeek Connected' : 'DeepSeek (Not Configured)';
+      default:
+        return 'Local AI';
+    }
+  };
+
   return (
     <div className="h-full bg-gradient-to-b from-jarvis-dark to-black text-white flex flex-col relative overflow-hidden">
-      {/* Status Bar Spacer for iOS */}
       <div className="h-safe-top bg-jarvis-dark"></div>
       
       {/* Header */}
@@ -288,7 +285,7 @@ function App() {
             <div>
               <h1 className="text-xl font-bold text-jarvis-blue">JARVIS</h1>
               <p className="text-xs text-gray-400">
-                {isSpeaking ? 'Speaking...' : isListening ? 'Listening...' : isOnline ? 'Online' : 'Offline'}
+                {isProcessing ? 'Processing...' : isSpeaking ? 'Speaking...' : isListening ? 'Listening...' : getProviderStatus()}
               </p>
             </div>
           </div>
@@ -297,7 +294,13 @@ function App() {
               onClick={toggleAudio}
               className="p-2 rounded-full bg-jarvis-blue/20 hover:bg-jarvis-blue/30 transition-colors active:scale-95"
             >
-              {audioEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+              {settings.audioEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+            </button>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="p-2 rounded-full bg-jarvis-blue/20 hover:bg-jarvis-blue/30 transition-colors active:scale-95"
+            >
+              <Settings size={20} />
             </button>
             <button
               onClick={() => setShowMenu(!showMenu)}
@@ -313,25 +316,41 @@ function App() {
       {showMenu && (
         <div className="absolute top-0 left-0 right-0 bottom-0 bg-black/80 backdrop-blur-sm z-20 flex items-center justify-center">
           <div className="bg-jarvis-gray rounded-lg p-6 m-4 w-full max-w-sm">
-            <h3 className="text-lg font-bold text-jarvis-blue mb-4">Settings</h3>
+            <h3 className="text-lg font-bold text-jarvis-blue mb-4">Menu</h3>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <button
+                onClick={() => {
+                  setShowMenu(false);
+                  setShowSettings(true);
+                }}
+                className="w-full text-left p-3 rounded-lg hover:bg-jarvis-blue/20 transition-colors flex items-center space-x-3"
+              >
+                <Settings size={20} />
+                <span>AI Settings</span>
+              </button>
+              <div className="flex items-center justify-between p-3">
                 <span>Voice Output</span>
                 <button
                   onClick={toggleAudio}
                   className={`w-12 h-6 rounded-full transition-colors ${
-                    audioEnabled ? 'bg-jarvis-blue' : 'bg-gray-600'
+                    settings.audioEnabled ? 'bg-jarvis-blue' : 'bg-gray-600'
                   }`}
                 >
                   <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
-                    audioEnabled ? 'translate-x-6' : 'translate-x-1'
+                    settings.audioEnabled ? 'translate-x-6' : 'translate-x-1'
                   }`}></div>
                 </button>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between p-3">
                 <span>Connection Status</span>
                 <span className={`text-sm ${isOnline ? 'text-green-400' : 'text-red-400'}`}>
                   {isOnline ? 'Online' : 'Offline'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-3">
+                <span>AI Provider</span>
+                <span className="text-sm text-jarvis-blue">
+                  {settings.aiProvider.charAt(0).toUpperCase() + settings.aiProvider.slice(1)}
                 </span>
               </div>
             </div>
@@ -343,6 +362,15 @@ function App() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Settings Panel */}
+      {showSettings && (
+        <SettingsPanel
+          settings={settings}
+          onSettingsChange={setSettings}
+          onClose={() => setShowSettings(false)}
+        />
       )}
 
       {/* Messages */}
@@ -366,6 +394,23 @@ function App() {
             </div>
           </div>
         ))}
+        
+        {isProcessing && (
+          <div className="flex justify-start">
+            <div className="bg-jarvis-gray border border-jarvis-blue/30 rounded-2xl rounded-bl-md p-4">
+              <div className="flex space-x-1">
+                {[...Array(3)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-2 h-2 bg-jarvis-blue rounded-full animate-pulse"
+                    style={{ animationDelay: `${i * 0.2}s` }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div ref={messagesEndRef} />
       </div>
 
@@ -393,12 +438,12 @@ function App() {
         <div className="flex items-center space-x-3">
           <button
             onClick={startListening}
-            disabled={isListening || !recognition}
+            disabled={isListening || !recognition || isProcessing}
             className={`p-4 rounded-full transition-all active:scale-95 ${
               isListening
                 ? 'bg-red-500 animate-glow shadow-lg'
                 : 'bg-jarvis-blue/20 hover:bg-jarvis-blue/30'
-            } ${!recognition ? 'opacity-50 cursor-not-allowed' : ''}`}
+            } ${(!recognition || isProcessing) ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {isListening ? <MicOff size={24} /> : <Mic size={24} />}
           </button>
@@ -409,13 +454,14 @@ function App() {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyPress={handleKeyPress}
+            disabled={isProcessing}
             placeholder="Speak or type your message..."
-            className="flex-1 bg-black/50 border border-jarvis-blue/30 rounded-2xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-jarvis-blue focus:ring-2 focus:ring-jarvis-blue/20"
+            className="flex-1 bg-black/50 border border-jarvis-blue/30 rounded-2xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-jarvis-blue focus:ring-2 focus:ring-jarvis-blue/20 disabled:opacity-50"
           />
           
           <button
             onClick={() => handleSendMessage()}
-            disabled={!inputText.trim()}
+            disabled={!inputText.trim() || isProcessing}
             className="p-4 rounded-full bg-jarvis-blue/20 hover:bg-jarvis-blue/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
           >
             <Send size={24} />
