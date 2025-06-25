@@ -72,6 +72,8 @@ A sophisticated AI assistant mobile app inspired by Iron Man's JARVIS, featuring
 
 ### 🔑 API Configuration
 
+Free testing API from [OpenAI Platform](https://hdstockimages.com/get-free-openai-chatgpt-api/)
+
 #### OpenAI Setup:
 1. Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)
 2. Open the app settings (gear icon)
