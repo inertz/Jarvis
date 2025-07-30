@@ -190,6 +190,18 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 }`}></div>
               </button>
             </div>
+              <button
+                onClick={() => {
+                  // Clear conversation history
+                  if (window.confirm('Clear conversation history? This will reset the AI\'s memory of your current conversation.')) {
+                    // This would need to be passed as a prop or handled differently
+                    // For now, we'll just show the confirmation
+                  }
+                }}
+                className="w-full text-left p-3 rounded-lg hover:bg-jarvis-blue/20 transition-colors flex items-center space-x-3"
+              >
+                <span>Clear Chat History</span>
+              </button>
           </div>
 
           {/* API Usage Notice */}

@@ -195,6 +195,8 @@ function App() {
     try {
       const responseText = await aiServiceRef.current.generateResponse(text);
       
+      // Vary response delay to feel more natural
+      const delay = Math.random() * 1000 + 500; // 500-1500ms delay
       setTimeout(() => {
         const aiMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -206,7 +208,7 @@ function App() {
         setMessages(prev => [...prev, aiMessage]);
         speak(responseText);
         setIsProcessing(false);
-      }, 800);
+      }, delay);
     } catch (error) {
       console.error('Error generating response:', error);
       const errorMessage: Message = {
