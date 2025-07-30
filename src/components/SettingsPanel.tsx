@@ -134,7 +134,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   type="checkbox"
                   checked={tempSettings.deepseek.enabled}
                   onChange={(e) => updateProvider('deepseek', 'enabled', e.target.checked)}
-                  disabled={tempSettings.aiProvider !== 'deepseek'}
                   className="text-jarvis-blue focus:ring-jarvis-blue"
                 />
                 <span className="text-sm">Enabled</span>
@@ -148,7 +147,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   type={showDeepSeekKey ? 'text' : 'password'}
                   value={tempSettings.deepseek.apiKey}
                   onChange={(e) => updateProvider('deepseek', 'apiKey', e.target.value)}
-                  disabled={tempSettings.aiProvider !== 'deepseek'}
                   placeholder="sk-..."
                   className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 pr-10 text-white placeholder-gray-400 focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
                 />
@@ -167,7 +165,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <select
                 value={tempSettings.deepseek.model}
                 onChange={(e) => updateProvider('deepseek', 'model', e.target.value)}
-                disabled={tempSettings.aiProvider !== 'deepseek'}
                 className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
               >
                 <option value="deepseek-chat">DeepSeek Chat</option>

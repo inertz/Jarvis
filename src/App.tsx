@@ -277,20 +277,16 @@ function App() {
   };
 
   const getProviderColor = () => {
-    const isConfigured = () => {
-      switch (settings.aiProvider) {
-        case 'openai':
-          return settings.openai.enabled && settings.openai.apiKey;
-        case 'deepseek':
-          return settings.deepseek.enabled && settings.deepseek.apiKey;
-        case 'google':
-          return settings.google.enabled && settings.google.apiKey;
-        default:
-          return true; // Local is always "configured"
-      }
-    };
-    
-    return isConfigured() ? 'text-green-400' : 'text-yellow-400';
+    switch (settings.aiProvider) {
+      case 'openai':
+        return (settings.openai.enabled && settings.openai.apiKey.trim()) ? 'text-green-400' : 'text-yellow-400';
+      case 'deepseek':
+        return (settings.deepseek.enabled && settings.deepseek.apiKey.trim()) ? 'text-green-400' : 'text-yellow-400';
+      case 'google':
+        return (settings.google.enabled && settings.google.apiKey.trim()) ? 'text-green-400' : 'text-yellow-400';
+      default:
+        return 'text-green-400'; // Local is always "configured"
+    }
   };
 
   return (
