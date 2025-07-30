@@ -14,9 +14,10 @@ export interface AIProvider {
 
 export interface AppSettings {
   audioEnabled: boolean;
-  aiProvider: 'local' | 'openai' | 'deepseek';
+  aiProvider: 'local' | 'openai' | 'deepseek' | 'google';
   openai: AIProvider;
   deepseek: AIProvider;
+  google: AIProvider;
 }
 
 export interface APIResponse {

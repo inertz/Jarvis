@@ -2,6 +2,7 @@ import { AppSettings } from '../types';
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
+const GOOGLE_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 export class AIService {
   private settings: AppSettings;
@@ -26,6 +27,8 @@ export class AIService {
           return await this.callOpenAI(userMessage);
         case 'deepseek':
           return await this.callDeepSeek(userMessage);
+        case 'google':
+          return await this.callGoogleAI(userMessage);
         default:
           return this.generateLocalResponse(userMessage);
       }
@@ -136,6 +139,85 @@ Respond naturally as if you're having a real conversation. Be engaging, helpful,
 
     const data = await response.json();
     const assistantResponse = data.choices[0]?.message?.content || 'I apologize, sir. I encountered an issue processing your request.';
+    
+    // Add assistant response to conversation history
+    this.conversationHistory.push({ role: 'assistant', content: assistantResponse });
+    
+    return assistantResponse;
+  }
+
+  private async callGoogleAI(userMessage: string): Promise<string> {
+    if (!this.settings.google.enabled || !this.settings.google.apiKey) {
+      throw new Error('Google AI not configured');
+    }
+
+    // Convert conversation history to Google AI format
+    const contents = [];
+    
+    // Add system instruction as first user message
+    contents.push({
+      role: 'user',
+      parts: [{
+        text: `You are JARVIS, Tony Stark's sophisticated AI assistant from Iron Man. You have a refined British personality and speak with intelligence, wit, and subtle humor. 
+
+Key personality traits:
+- Address the user as "sir" or "madam" when appropriate
+- Speak with confidence and sophistication
+- Use British expressions occasionally (brilliant, quite right, indeed, etc.)
+- Be helpful but maintain a slight air of superiority (in a charming way)
+- Show genuine interest in the user's requests
+- Occasionally reference your capabilities or Tony Stark's world when relevant
+- Be conversational and engaging, not robotic
+- Use natural speech patterns with contractions
+- Show personality through your responses
+
+Respond naturally as if you're having a real conversation. Be engaging, helpful, and maintain the JARVIS character throughout.
+
+Now, please respond to: ${userMessage}`
+      }]
+    });
+
+    const modelName = this.settings.google.model || 'gemini-pro';
+    const response = await fetch(`${GOOGLE_API_URL}/${modelName}:generateContent?key=${this.settings.google.apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: contents,
+        generationConfig: {
+          temperature: 0.8,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 300,
+        },
+        safetySettings: [
+          {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          },
+          {
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          },
+          {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          },
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          }
+        ]
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Google AI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const assistantResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'I apologize, sir. I encountered an issue processing your request.';
     
     // Add assistant response to conversation history
     this.conversationHistory.push({ role: 'assistant', content: assistantResponse });

@@ -16,6 +16,7 @@ A sophisticated AI assistant mobile app inspired by Iron Man's JARVIS, featuring
 - **Multiple AI Providers**: Choose between Local, OpenAI GPT, or DeepSeek
 - **OpenAI GPT Support**: GPT-3.5 Turbo, GPT-4, and GPT-4 Turbo models
 - **DeepSeek Integration**: DeepSeek Chat and DeepSeek Coder models
+- **Google AI Integration**: Gemini Pro and Gemini Pro Vision models
 - **Fallback System**: Automatically falls back to local responses if API fails
 - **Secure API Key Storage**: Encrypted local storage for API credentials
 
@@ -45,7 +46,7 @@ A sophisticated AI assistant mobile app inspired by Iron Man's JARVIS, featuring
 ### Prerequisites
 - Node.js 18+ 
 - npm or yarn
-- API keys for OpenAI or DeepSeek (optional)
+- API keys for OpenAI, DeepSeek, or Google AI (optional)
 
 ### Installation
 
@@ -88,6 +89,13 @@ Free testing API from [OpenAI Platform](https://hdstockimages.com/get-free-opena
 4. Enter your API key and choose your preferred model
 5. Enable the DeepSeek integration
 
+#### Google AI Setup:
+1. Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Open the app settings (gear icon)
+3. Select "Google AI (Gemini)" as your AI provider
+4. Enter your API key and choose your preferred model
+5. Enable the Google AI integration
+
 ### 📲 Install as Mobile App
 
 #### iPhone/iPad:
@@ -113,6 +121,7 @@ Free testing API from [OpenAI Platform](https://hdstockimages.com/get-free-opena
 - **Lucide React** - Beautiful icons
 - **OpenAI API** - GPT models integration
 - **DeepSeek API** - Advanced AI model integration
+- **Google AI API** - Gemini models integration
 
 ## 📁 Project Structure
 
@@ -153,6 +162,7 @@ jarvis-ai-assistant/
 - **Local Mode**: Basic responses, works offline
 - **OpenAI GPT**: Advanced conversational AI with context awareness
 - **DeepSeek**: Specialized AI with coding and reasoning capabilities
+- **Google AI**: Powerful Gemini models with advanced reasoning
 
 ### Text Input
 Type any message in the input field and press Enter or tap the send button.
@@ -215,6 +225,10 @@ The app stores API keys securely in local storage. No environment variables are 
 ### DeepSeek Pricing (Approximate)
 - **DeepSeek Chat**: ~$0.0014 per 1K tokens
 - **DeepSeek Coder**: ~$0.0014 per 1K tokens
+
+### Google AI Pricing (Approximate)
+- **Gemini Pro**: Free tier available, then ~$0.0005 per 1K tokens
+- **Gemini Pro Vision**: ~$0.0025 per 1K tokens
 
 *Note: Prices may vary. Check provider websites for current pricing.*
 
@@ -281,6 +295,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [x] OpenAI GPT integration
 - [x] DeepSeek AI integration
+- [x] Google AI (Gemini) integration
 - [x] Advanced settings panel
 - [x] Secure API key storage
 - [ ] Conversation history export
@@ -291,7 +306,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [ ] Smart home integration
 - [ ] Advanced conversation memory
 - [ ] Claude AI integration
-- [ ] Gemini AI integration
 
 ---
 

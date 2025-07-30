@@ -19,6 +19,12 @@ const defaultSettings: AppSettings = {
     apiKey: '',
     model: 'deepseek-chat',
     enabled: false
+  },
+  google: {
+    name: 'Google AI',
+    apiKey: '',
+    model: 'gemini-pro',
+    enabled: false
   }
 };
 
@@ -263,6 +269,8 @@ function App() {
         return settings.openai.enabled && settings.openai.apiKey ? 'OpenAI Connected' : 'OpenAI (Not Configured)';
       case 'deepseek':
         return settings.deepseek.enabled && settings.deepseek.apiKey ? 'DeepSeek Connected' : 'DeepSeek (Not Configured)';
+      case 'google':
+        return settings.google.enabled && settings.google.apiKey ? 'Google AI Connected' : 'Google AI (Not Configured)';
       default:
         return 'Local AI';
     }
@@ -352,7 +360,7 @@ function App() {
               <div className="flex items-center justify-between p-3">
                 <span>AI Provider</span>
                 <span className="text-sm text-jarvis-blue">
-                  {settings.aiProvider.charAt(0).toUpperCase() + settings.aiProvider.slice(1)}
+                  {settings.aiProvider === 'google' ? 'Google AI' : settings.aiProvider.charAt(0).toUpperCase() + settings.aiProvider.slice(1)}
                 </span>
               </div>
             </div>

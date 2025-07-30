@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Eye, EyeOff, Cpu, Zap, Globe } from 'lucide-react';
+import { X, Eye, EyeOff, Cpu, Zap, Globe, Brain } from 'lucide-react';
 import { AppSettings } from '../types';
 
 interface SettingsPanelProps {
@@ -15,6 +15,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 }) => {
   const [showOpenAIKey, setShowOpenAIKey] = useState(false);
   const [showDeepSeekKey, setShowDeepSeekKey] = useState(false);
+  const [showGoogleKey, setShowGoogleKey] = useState(false);
   const [tempSettings, setTempSettings] = useState<AppSettings>(settings);
 
   const handleSave = () => {
@@ -30,7 +31,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         [field]: value
       }
     }));
-  };
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -53,7 +53,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               {[
                 { value: 'local', label: 'Local (Basic)', icon: Cpu },
                 { value: 'openai', label: 'OpenAI GPT', icon: Zap },
-                { value: 'deepseek', label: 'DeepSeek', icon: Globe }
+                { value: 'deepseek', label: 'DeepSeek', icon: Globe },
+                { value: 'google', label: 'Google AI (Gemini)', icon: Brain }
               ].map(({ value, label, icon: Icon }) => (
                 <label key={value} className="flex items-center space-x-3 p-3 rounded-lg border border-jarvis-blue/30 hover:bg-jarvis-blue/10 cursor-pointer">
                   <input
@@ -170,6 +171,57 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               >
                 <option value="deepseek-chat">DeepSeek Chat</option>
                 <option value="deepseek-coder">DeepSeek Coder</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Google AI Configuration */}
+          <div className={`space-y-4 p-4 rounded-lg border ${tempSettings.aiProvider === 'google' ? 'border-jarvis-blue/50 bg-jarvis-blue/5' : 'border-gray-600 opacity-50'}`}>
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-jarvis-blue">Google AI Configuration</h4>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={tempSettings.google.enabled}
+                  onChange={(e) => updateProvider('google', 'enabled', e.target.checked)}
+                  disabled={tempSettings.aiProvider !== 'google'}
+                  className="text-jarvis-blue focus:ring-jarvis-blue"
+                />
+                <span className="text-sm">Enabled</span>
+              </label>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">API Key</label>
+              <div className="relative">
+                <input
+                  type={showGoogleKey ? 'text' : 'password'}
+                  value={tempSettings.google.apiKey}
+                  onChange={(e) => updateProvider('google', 'apiKey', e.target.value)}
+                  disabled={tempSettings.aiProvider !== 'google'}
+                  placeholder="AIza..."
+                  className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 pr-10 text-white placeholder-gray-400 focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowGoogleKey(!showGoogleKey)}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-jarvis-blue/20 rounded"
+                >
+                  {showGoogleKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Model</label>
+              <select
+                value={tempSettings.google.model}
+                onChange={(e) => updateProvider('google', 'model', e.target.value)}
+                disabled={tempSettings.aiProvider !== 'google'}
+                className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+              >
+                <option value="gemini-pro">Gemini Pro</option>
+                <option value="gemini-pro-vision">Gemini Pro Vision</option>
               </select>
             </div>
           </div>
