@@ -24,10 +24,22 @@ export class AIService {
     try {
       switch (this.settings.aiProvider) {
         case 'openai':
+          if (!this.settings.openai.enabled || !this.settings.openai.apiKey) {
+            console.warn('OpenAI not configured, falling back to local responses');
+            return this.generateLocalResponse(userMessage);
+          }
           return await this.callOpenAI(userMessage);
         case 'deepseek':
+          if (!this.settings.deepseek.enabled || !this.settings.deepseek.apiKey) {
+            console.warn('DeepSeek not configured, falling back to local responses');
+            return this.generateLocalResponse(userMessage);
+          }
           return await this.callDeepSeek(userMessage);
         case 'google':
+          if (!this.settings.google.enabled || !this.settings.google.apiKey) {
+            console.warn('Google AI not configured, falling back to local responses');
+            return this.generateLocalResponse(userMessage);
+          }
           return await this.callGoogleAI(userMessage);
         default:
           return this.generateLocalResponse(userMessage);
@@ -39,9 +51,6 @@ export class AIService {
   }
 
   private async callOpenAI(userMessage: string): Promise<string> {
-    if (!this.settings.openai.enabled || !this.settings.openai.apiKey) {
-      throw new Error('OpenAI not configured');
-    }
 
     const messages = [
       {
@@ -93,9 +102,6 @@ Respond naturally as if you're having a real conversation. Be engaging, helpful,
   }
 
   private async callDeepSeek(userMessage: string): Promise<string> {
-    if (!this.settings.deepseek.enabled || !this.settings.deepseek.apiKey) {
-      throw new Error('DeepSeek not configured');
-    }
 
     const messages = [
       {
@@ -147,9 +153,6 @@ Respond naturally as if you're having a real conversation. Be engaging, helpful,
   }
 
   private async callGoogleAI(userMessage: string): Promise<string> {
-    if (!this.settings.google.enabled || !this.settings.google.apiKey) {
-      throw new Error('Google AI not configured');
-    }
 
     // Convert conversation history to Google AI format
     const contents = [];
