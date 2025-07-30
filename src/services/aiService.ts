@@ -42,6 +42,12 @@ export class AIService {
             return this.generateLocalResponse(userMessage);
           }
           return await this.callGoogleAI(userMessage);
+        case 'openrouter':
+          if (!this.settings.openrouter.enabled || !this.settings.openrouter.apiKey) {
+            console.warn('OpenRouter not configured, falling back to local responses');
+            return this.generateLocalResponse(userMessage);
+          }
+          return await this.callOpenRouter(userMessage);
         default:
           return this.generateLocalResponse(userMessage);
       }

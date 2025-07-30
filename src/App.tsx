@@ -278,7 +278,7 @@ function App() {
       case 'google':
         return settings.google.enabled && settings.google.apiKey ? `Google ${settings.google.model}` : 'Google AI (Not Configured)';
       case 'openrouter':
-        return settings.openrouter.enabled && settings.openrouter.apiKey.trim() ? `OpenRouter ${settings.openrouter.model}` : 'OpenRouter (Not Configured)';
+        return settings.openrouter.enabled && settings.openrouter.apiKey && settings.openrouter.apiKey.trim() ? `OpenRouter ${settings.openrouter.model}` : 'OpenRouter (Not Configured)';
       default:
         return 'Local AI';
     }
@@ -293,7 +293,7 @@ function App() {
       case 'google':
         return (settings.google.enabled && settings.google.apiKey.trim()) ? 'text-green-400' : 'text-yellow-400';
       case 'openrouter':
-        return (settings.openrouter.enabled && settings.openrouter.apiKey.trim()) ? 'text-green-400' : 'text-yellow-400';
+        return (settings.openrouter.enabled && settings.openrouter.apiKey && settings.openrouter.apiKey.trim()) ? 'text-green-400' : 'text-yellow-400';
       default:
         return 'text-green-400'; // Local is always "configured"
     }
