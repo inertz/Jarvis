@@ -266,14 +266,31 @@ function App() {
   const getProviderStatus = () => {
     switch (settings.aiProvider) {
       case 'openai':
-        return settings.openai.enabled && settings.openai.apiKey ? 'OpenAI Connected' : 'OpenAI (Not Configured)';
+        return settings.openai.enabled && settings.openai.apiKey ? `OpenAI ${settings.openai.model}` : 'OpenAI (Not Configured)';
       case 'deepseek':
-        return settings.deepseek.enabled && settings.deepseek.apiKey ? 'DeepSeek Connected' : 'DeepSeek (Not Configured)';
+        return settings.deepseek.enabled && settings.deepseek.apiKey ? `DeepSeek ${settings.deepseek.model}` : 'DeepSeek (Not Configured)';
       case 'google':
-        return settings.google.enabled && settings.google.apiKey ? 'Google AI Connected' : 'Google AI (Not Configured)';
+        return settings.google.enabled && settings.google.apiKey ? `Google ${settings.google.model}` : 'Google AI (Not Configured)';
       default:
         return 'Local AI';
     }
+  };
+
+  const getProviderColor = () => {
+    const isConfigured = () => {
+      switch (settings.aiProvider) {
+        case 'openai':
+          return settings.openai.enabled && settings.openai.apiKey;
+        case 'deepseek':
+          return settings.deepseek.enabled && settings.deepseek.apiKey;
+        case 'google':
+          return settings.google.enabled && settings.google.apiKey;
+        default:
+          return true; // Local is always "configured"
+      }
+    };
+    
+    return isConfigured() ? 'text-green-400' : 'text-yellow-400';
   };
 
   return (
@@ -294,7 +311,7 @@ function App() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-jarvis-blue">JARVIS</h1>
-              <p className="text-xs text-gray-400">
+              <p className={`text-xs ${getProviderColor()}`}>
                 {isProcessing ? 'Processing...' : isSpeaking ? 'Speaking...' : isListening ? 'Listening...' : getProviderStatus()}
               </p>
             </div>
@@ -359,8 +376,8 @@ function App() {
               </div>
               <div className="flex items-center justify-between p-3">
                 <span>AI Provider</span>
-                <span className="text-sm text-jarvis-blue">
-                  {settings.aiProvider === 'google' ? 'Google AI' : settings.aiProvider.charAt(0).toUpperCase() + settings.aiProvider.slice(1)}
+                <span className={`text-sm ${getProviderColor()}`}>
+                  {getProviderStatus()}
                 </span>
               </div>
             </div>
