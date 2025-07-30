@@ -281,6 +281,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 <option value="meta-llama/llama-3.1-70b-instruct">Llama 3.1 70B</option>
                 <option value="mistralai/mistral-large">Mistral Large</option>
                 <option value="cohere/command-r-plus">Command R+</option>
+                <option value="deepseek/deepseek-chat-v3-0324:free">DeepSeek Chat V3 (Free)</option>
               </select>
             </div>
           </div>
