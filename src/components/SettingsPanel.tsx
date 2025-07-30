@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Eye, EyeOff, Cpu, Zap, Globe, Brain } from 'lucide-react';
+import { X, Eye, EyeOff, Cpu, Zap, Globe, Brain, Network } from 'lucide-react';
 import { AppSettings } from '../types';
 
 interface SettingsPanelProps {
@@ -16,6 +16,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const [showOpenAIKey, setShowOpenAIKey] = useState(false);
   const [showDeepSeekKey, setShowDeepSeekKey] = useState(false);
   const [showGoogleKey, setShowGoogleKey] = useState(false);
+  const [showOpenRouterKey, setShowOpenRouterKey] = useState(false);
   const [tempSettings, setTempSettings] = useState<AppSettings>(settings);
 
   const handleSave = () => {
@@ -23,7 +24,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     onClose();
   };
 
-  const updateProvider = (provider: 'openai' | 'deepseek', field: string, value: string | boolean) => {
+  const updateProvider = (provider: 'openai' | 'deepseek' | 'google' | 'openrouter', field: string, value: string | boolean) => {
     setTempSettings(prev => ({
       ...prev,
       [provider]: {
@@ -55,7 +56,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 { value: 'local', label: 'Local (Basic)', icon: Cpu },
                 { value: 'openai', label: 'OpenAI GPT', icon: Zap },
                 { value: 'deepseek', label: 'DeepSeek', icon: Globe },
-                { value: 'google', label: 'Google AI (Gemini)', icon: Brain }
+                { value: 'google', label: 'Google AI (Gemini)', icon: Brain },
+                { value: 'openrouter', label: 'OpenRouter', icon: Network }
               ].map(({ value, label, icon: Icon }) => (
                 <label key={value} className="flex items-center space-x-3 p-3 rounded-lg border border-jarvis-blue/30 hover:bg-jarvis-blue/10 cursor-pointer">
                   <input
@@ -220,6 +222,65 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               >
                 <option value="gemini-pro">Gemini Pro</option>
                 <option value="gemini-pro-vision">Gemini Pro Vision</option>
+              </select>
+            </div>
+          </div>
+
+          {/* OpenRouter Configuration */}
+          <div className={`space-y-4 p-4 rounded-lg border ${tempSettings.aiProvider === 'openrouter' ? 'border-jarvis-blue/50 bg-jarvis-blue/5' : 'border-gray-600 opacity-50'}`}>
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-jarvis-blue">OpenRouter Configuration</h4>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={tempSettings.openrouter.enabled}
+                  onChange={(e) => updateProvider('openrouter', 'enabled', e.target.checked)}
+                  disabled={tempSettings.aiProvider !== 'openrouter'}
+                  className="text-jarvis-blue focus:ring-jarvis-blue"
+                />
+                <span className="text-sm">Enabled</span>
+              </label>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">API Key</label>
+              <div className="relative">
+                <input
+                  type={showOpenRouterKey ? 'text' : 'password'}
+                  value={tempSettings.openrouter.apiKey}
+                  onChange={(e) => updateProvider('openrouter', 'apiKey', e.target.value)}
+                  disabled={tempSettings.aiProvider !== 'openrouter'}
+                  placeholder="sk-or-v1-..."
+                  className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 pr-10 text-white placeholder-gray-400 focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowOpenRouterKey(!showOpenRouterKey)}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-jarvis-blue/20 rounded"
+                >
+                  {showOpenRouterKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Model</label>
+              <select
+                value={tempSettings.openrouter.model}
+                onChange={(e) => updateProvider('openrouter', 'model', e.target.value)}
+                disabled={tempSettings.aiProvider !== 'openrouter'}
+                className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+              >
+                <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                <option value="anthropic/claude-3-haiku">Claude 3 Haiku</option>
+                <option value="openai/gpt-4o">GPT-4o</option>
+                <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+                <option value="openai/gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                <option value="google/gemini-pro-1.5">Gemini Pro 1.5</option>
+                <option value="meta-llama/llama-3.1-405b-instruct">Llama 3.1 405B</option>
+                <option value="meta-llama/llama-3.1-70b-instruct">Llama 3.1 70B</option>
+                <option value="mistralai/mistral-large">Mistral Large</option>
+                <option value="cohere/command-r-plus">Command R+</option>
               </select>
             </div>
           </div>

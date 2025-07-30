@@ -3,6 +3,7 @@ import { AppSettings } from '../types';
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 const GOOGLE_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 export class AIService {
   private settings: AppSettings;
@@ -221,6 +222,59 @@ Now, please respond to: ${userMessage}`
 
     const data = await response.json();
     const assistantResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'I apologize, sir. I encountered an issue processing your request.';
+    
+    // Add assistant response to conversation history
+    this.conversationHistory.push({ role: 'assistant', content: assistantResponse });
+    
+    return assistantResponse;
+  }
+
+  private async callOpenRouter(userMessage: string): Promise<string> {
+    const messages = [
+      {
+        role: 'system',
+        content: `You are JARVIS, Tony Stark's sophisticated AI assistant from Iron Man. You have a refined British personality and speak with intelligence, wit, and subtle humor. 
+
+Key personality traits:
+- Address the user as "sir" or "madam" when appropriate
+- Speak with confidence and sophistication
+- Use British expressions occasionally (brilliant, quite right, indeed, etc.)
+- Be helpful but maintain a slight air of superiority (in a charming way)
+- Show genuine interest in the user's requests
+- Occasionally reference your capabilities or Tony Stark's world when relevant
+- Be conversational and engaging, not robotic
+- Use natural speech patterns with contractions
+- Show personality through your responses
+
+Respond naturally as if you're having a real conversation. Be engaging, helpful, and maintain the JARVIS character throughout.`
+      },
+      ...this.conversationHistory
+    ];
+
+    const response = await fetch(OPENROUTER_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.settings.openrouter.apiKey}`,
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'Jarvis AI Assistant',
+      },
+      body: JSON.stringify({
+        model: this.settings.openrouter.model || 'anthropic/claude-3.5-sonnet',
+        messages: messages,
+        max_tokens: 300,
+        temperature: 0.8,
+        presence_penalty: 0.1,
+        frequency_penalty: 0.1,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenRouter API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const assistantResponse = data.choices[0]?.message?.content || 'I apologize, sir. I encountered an issue processing your request.';
     
     // Add assistant response to conversation history
     this.conversationHistory.push({ role: 'assistant', content: assistantResponse });

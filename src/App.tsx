@@ -25,6 +25,12 @@ const defaultSettings: AppSettings = {
     apiKey: '',
     model: 'gemini-pro',
     enabled: false
+  },
+  openrouter: {
+    name: 'OpenRouter',
+    apiKey: '',
+    model: 'anthropic/claude-3.5-sonnet',
+    enabled: false
   }
 };
 
@@ -271,6 +277,8 @@ function App() {
         return settings.deepseek.enabled && settings.deepseek.apiKey ? `DeepSeek ${settings.deepseek.model}` : 'DeepSeek (Not Configured)';
       case 'google':
         return settings.google.enabled && settings.google.apiKey ? `Google ${settings.google.model}` : 'Google AI (Not Configured)';
+      case 'openrouter':
+        return settings.openrouter.enabled && settings.openrouter.apiKey.trim() ? `OpenRouter ${settings.openrouter.model}` : 'OpenRouter (Not Configured)';
       default:
         return 'Local AI';
     }
@@ -284,6 +292,8 @@ function App() {
         return (settings.deepseek.enabled && settings.deepseek.apiKey.trim()) ? 'text-green-400' : 'text-yellow-400';
       case 'google':
         return (settings.google.enabled && settings.google.apiKey.trim()) ? 'text-green-400' : 'text-yellow-400';
+      case 'openrouter':
+        return (settings.openrouter.enabled && settings.openrouter.apiKey.trim()) ? 'text-green-400' : 'text-yellow-400';
       default:
         return 'text-green-400'; // Local is always "configured"
     }
