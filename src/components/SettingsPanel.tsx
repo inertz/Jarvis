@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { X, Eye, EyeOff, Cpu, Zap, Globe, Brain, Network } from 'lucide-react';
+import { X, Eye, EyeOff, Cpu, Zap, Globe, Brain, Network, Bot } from 'lucide-react';
 import { AppSettings } from '../types';
-import { fetchOllamaModels } from '../services/aiService';
+import {
+  fetchDeepSeekModels,
+  fetchGoogleModels,
+  fetchNvidiaModels,
+  fetchOllamaModels,
+  fetchOpenAIModels,
+  fetchOpenRouterModels,
+} from '../services/aiService';
 
 interface SettingsPanelProps {
   settings: AppSettings;
@@ -19,14 +26,84 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const [showDeepSeekKey, setShowDeepSeekKey] = useState(false);
   const [showGoogleKey, setShowGoogleKey] = useState(false);
   const [showOpenRouterKey, setShowOpenRouterKey] = useState(false);
+  const [showOpenAIBaseUrl, setShowOpenAIBaseUrl] = useState(false);
+  const [showDeepSeekBaseUrl, setShowDeepSeekBaseUrl] = useState(false);
+  const [showGoogleBaseUrl, setShowGoogleBaseUrl] = useState(false);
+  const [showOpenRouterBaseUrl, setShowOpenRouterBaseUrl] = useState(false);
+  const [showNvidiaKey, setShowNvidiaKey] = useState(false);
+  const [showNvidiaBaseUrl, setShowNvidiaBaseUrl] = useState(false);
   const [tempSettings, setTempSettings] = useState<AppSettings>(settings);
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   const [isLoadingOllamaModels, setIsLoadingOllamaModels] = useState(false);
   const [ollamaStatus, setOllamaStatus] = useState<string>('');
+  const [providerModels, setProviderModels] = useState<Record<'openai' | 'deepseek' | 'google' | 'openrouter' | 'nvidia', string[]>>({
+    openai: [],
+    deepseek: [],
+    google: [],
+    openrouter: [],
+    nvidia: [],
+  });
+  const [providerStatus, setProviderStatus] = useState<Record<'openai' | 'deepseek' | 'google' | 'openrouter' | 'nvidia', string>>({
+    openai: '',
+    deepseek: '',
+    google: '',
+    openrouter: '',
+    nvidia: '',
+  });
+  const [providerLoading, setProviderLoading] = useState<Record<'openai' | 'deepseek' | 'google' | 'openrouter' | 'nvidia', boolean>>({
+    openai: false,
+    deepseek: false,
+    google: false,
+    openrouter: false,
+    nvidia: false,
+  });
 
   const handleSave = () => {
     onSettingsChange(tempSettings);
     onClose();
+  };
+
+  const detectProviderModels = async (provider: 'openai' | 'deepseek' | 'google' | 'openrouter' | 'nvidia') => {
+    setProviderLoading(prev => ({ ...prev, [provider]: true }));
+
+    try {
+      const currentProvider = tempSettings[provider];
+      const models = await (
+        provider === 'openai'
+          ? fetchOpenAIModels(currentProvider.baseUrl, currentProvider.apiKey)
+          : provider === 'deepseek'
+            ? fetchDeepSeekModels(currentProvider.baseUrl, currentProvider.apiKey)
+            : provider === 'google'
+              ? fetchGoogleModels(currentProvider.baseUrl, currentProvider.apiKey)
+              : provider === 'openrouter'
+                ? fetchOpenRouterModels(currentProvider.baseUrl, currentProvider.apiKey)
+                : fetchNvidiaModels(currentProvider.baseUrl, currentProvider.apiKey)
+      );
+
+      setProviderModels(prev => ({ ...prev, [provider]: models }));
+      setProviderStatus(prev => ({
+        ...prev,
+        [provider]: models.length > 0
+          ? `Detected ${models.length} model${models.length === 1 ? '' : 's'}.`
+          : 'Connection successful, but no models were returned.',
+      }));
+      setTempSettings(prev => ({
+        ...prev,
+        [provider]: {
+          ...prev[provider],
+          enabled: true,
+          model: prev[provider].model.trim() || models[0] || prev[provider].model,
+        },
+      }));
+    } catch (error) {
+      setProviderModels(prev => ({ ...prev, [provider]: [] }));
+      setProviderStatus(prev => ({
+        ...prev,
+        [provider]: error instanceof Error ? error.message : 'Unable to detect models.',
+      }));
+    } finally {
+      setProviderLoading(prev => ({ ...prev, [provider]: false }));
+    }
   };
 
   const detectOllamaModels = async () => {
@@ -101,7 +178,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     };
   }, [tempSettings.aiProvider, tempSettings.localAdvanced.baseUrl]);
 
-  const updateProvider = (provider: 'localAdvanced' | 'openai' | 'deepseek' | 'google' | 'openrouter', field: string, value: string | boolean) => {
+  const updateProvider = (provider: 'localAdvanced' | 'openai' | 'deepseek' | 'google' | 'openrouter' | 'nvidia', field: string, value: string | boolean) => {
     setTempSettings(prev => ({
       ...prev,
       [provider]: {
@@ -110,6 +187,50 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       }
     }));
   };
+
+  const renderBaseUrlField = (
+    provider: 'openai' | 'deepseek' | 'google' | 'openrouter' | 'nvidia',
+    showValue: boolean,
+    setShowValue: React.Dispatch<React.SetStateAction<boolean>>,
+    placeholder: string
+  ) => (
+    <div>
+      <label className="block text-sm font-medium mb-2">API URL Endpoint</label>
+      <div className="relative">
+        <input
+          type={showValue ? 'text' : 'password'}
+          value={tempSettings[provider].baseUrl || ''}
+          onChange={(e) => updateProvider(provider, 'baseUrl', e.target.value)}
+          disabled={tempSettings.aiProvider !== provider}
+          placeholder={placeholder}
+          className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 pr-10 text-white placeholder-gray-400 focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+        />
+        <button
+          type="button"
+          onClick={() => setShowValue(!showValue)}
+          className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-jarvis-blue/20 rounded"
+        >
+          {showValue ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderProviderDetection = (provider: 'openai' | 'deepseek' | 'google' | 'openrouter' | 'nvidia') => (
+    <div>
+      <button
+        type="button"
+        onClick={() => void detectProviderModels(provider)}
+        disabled={tempSettings.aiProvider !== provider || providerLoading[provider]}
+        className="w-full bg-jarvis-blue/20 hover:bg-jarvis-blue/30 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 rounded-lg transition-colors"
+      >
+        {providerLoading[provider] ? 'Detecting Models...' : 'Detect Models'}
+      </button>
+      <p className={`mt-2 text-xs ${providerStatus[provider].includes('Detected') ? 'text-green-300' : 'text-yellow-300'}`}>
+        {providerStatus[provider]}
+      </p>
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -135,7 +256,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               { value: 'openai', label: 'OpenAI GPT', icon: Zap },
               { value: 'deepseek', label: 'DeepSeek', icon: Globe },
               { value: 'google', label: 'Google AI (Gemini)', icon: Brain },
-                { value: 'openrouter', label: 'OpenRouter', icon: Network }
+                { value: 'openrouter', label: 'OpenRouter', icon: Network },
+                { value: 'nvidia', label: 'NVIDIA NIM', icon: Bot }
               ].map(({ value, label, icon: Icon }) => (
                 <label key={value} className="flex items-center space-x-3 p-3 rounded-lg border border-jarvis-blue/30 hover:bg-jarvis-blue/10 cursor-pointer">
                   <input
@@ -157,6 +279,75 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </label>
               ))}
             </div>
+          </div>
+
+          {/* NVIDIA Configuration */}
+          <div className={`space-y-4 p-4 rounded-lg border ${tempSettings.aiProvider === 'nvidia' ? 'border-jarvis-blue/50 bg-jarvis-blue/5' : 'border-gray-600 opacity-50'}`}>
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-jarvis-blue">NVIDIA Configuration</h4>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={tempSettings.nvidia.enabled}
+                  onChange={(e) => updateProvider('nvidia', 'enabled', e.target.checked)}
+                  disabled={tempSettings.aiProvider !== 'nvidia'}
+                  className="text-jarvis-blue focus:ring-jarvis-blue"
+                />
+                <span className="text-sm">Enabled</span>
+              </label>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">API Key</label>
+              <div className="relative">
+                <input
+                  type={showNvidiaKey ? 'text' : 'password'}
+                  value={tempSettings.nvidia.apiKey}
+                  onChange={(e) => updateProvider('nvidia', 'apiKey', e.target.value)}
+                  disabled={tempSettings.aiProvider !== 'nvidia'}
+                  placeholder="nvapi-..."
+                  className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 pr-10 text-white placeholder-gray-400 focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNvidiaKey(!showNvidiaKey)}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-jarvis-blue/20 rounded"
+                >
+                  {showNvidiaKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {renderBaseUrlField('nvidia', showNvidiaBaseUrl, setShowNvidiaBaseUrl, 'https://integrate.api.nvidia.com/v1')}
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Model</label>
+              {providerModels.nvidia.length > 0 ? (
+                <select
+                  value={tempSettings.nvidia.model}
+                  onChange={(e) => updateProvider('nvidia', 'model', e.target.value)}
+                  disabled={tempSettings.aiProvider !== 'nvidia'}
+                  className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+                >
+                  {providerModels.nvidia.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={tempSettings.nvidia.model}
+                  onChange={(e) => updateProvider('nvidia', 'model', e.target.value)}
+                  disabled={tempSettings.aiProvider !== 'nvidia'}
+                  placeholder="meta/llama-3.1-70b-instruct"
+                  className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+                />
+              )}
+            </div>
+
+            {renderProviderDetection('nvidia')}
           </div>
 
           {/* Local Advanced Configuration */}
@@ -278,19 +469,38 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </div>
             </div>
 
+            {renderBaseUrlField('openai', showOpenAIBaseUrl, setShowOpenAIBaseUrl, 'https://api.openai.com/v1')}
+
             <div>
               <label className="block text-sm font-medium mb-2">Model</label>
-              <select
-                value={tempSettings.openai.model}
-                onChange={(e) => updateProvider('openai', 'model', e.target.value)}
-                disabled={tempSettings.aiProvider !== 'openai'}
-                className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
-              >
-                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                <option value="gpt-4">GPT-4</option>
-                <option value="gpt-4-turbo">GPT-4 Turbo</option>
-              </select>
+              {providerModels.openai.length > 0 ? (
+                <select
+                  value={tempSettings.openai.model}
+                  onChange={(e) => updateProvider('openai', 'model', e.target.value)}
+                  disabled={tempSettings.aiProvider !== 'openai'}
+                  className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+                >
+                  {providerModels.openai.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <select
+                  value={tempSettings.openai.model}
+                  onChange={(e) => updateProvider('openai', 'model', e.target.value)}
+                  disabled={tempSettings.aiProvider !== 'openai'}
+                  className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+                >
+                  <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                  <option value="gpt-4">GPT-4</option>
+                  <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                </select>
+              )}
             </div>
+
+            {renderProviderDetection('openai')}
           </div>
 
           {/* DeepSeek Configuration */}
@@ -328,17 +538,35 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </div>
             </div>
 
+            {renderBaseUrlField('deepseek', showDeepSeekBaseUrl, setShowDeepSeekBaseUrl, 'https://api.deepseek.com/v1')}
+
             <div>
               <label className="block text-sm font-medium mb-2">Model</label>
-              <select
-                value={tempSettings.deepseek.model}
-                onChange={(e) => updateProvider('deepseek', 'model', e.target.value)}
-                className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
-              >
-                <option value="deepseek-chat">DeepSeek Chat</option>
-                <option value="deepseek-coder">DeepSeek Coder</option>
-              </select>
+              {providerModels.deepseek.length > 0 ? (
+                <select
+                  value={tempSettings.deepseek.model}
+                  onChange={(e) => updateProvider('deepseek', 'model', e.target.value)}
+                  className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+                >
+                  {providerModels.deepseek.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <select
+                  value={tempSettings.deepseek.model}
+                  onChange={(e) => updateProvider('deepseek', 'model', e.target.value)}
+                  className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+                >
+                  <option value="deepseek-chat">DeepSeek Chat</option>
+                  <option value="deepseek-coder">DeepSeek Coder</option>
+                </select>
+              )}
             </div>
+
+            {renderProviderDetection('deepseek')}
           </div>
 
           {/* Google AI Configuration */}
@@ -378,18 +606,37 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </div>
             </div>
 
+            {renderBaseUrlField('google', showGoogleBaseUrl, setShowGoogleBaseUrl, 'https://generativelanguage.googleapis.com/v1beta')}
+
             <div>
               <label className="block text-sm font-medium mb-2">Model</label>
-              <select
-                value={tempSettings.google.model}
-                onChange={(e) => updateProvider('google', 'model', e.target.value)}
-                disabled={tempSettings.aiProvider !== 'google'}
-                className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
-              >
-                <option value="gemini-pro">Gemini Pro</option>
-                <option value="gemini-pro-vision">Gemini Pro Vision</option>
-              </select>
+              {providerModels.google.length > 0 ? (
+                <select
+                  value={tempSettings.google.model}
+                  onChange={(e) => updateProvider('google', 'model', e.target.value)}
+                  disabled={tempSettings.aiProvider !== 'google'}
+                  className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+                >
+                  {providerModels.google.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <select
+                  value={tempSettings.google.model}
+                  onChange={(e) => updateProvider('google', 'model', e.target.value)}
+                  disabled={tempSettings.aiProvider !== 'google'}
+                  className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+                >
+                  <option value="gemini-pro">Gemini Pro</option>
+                  <option value="gemini-pro-vision">Gemini Pro Vision</option>
+                </select>
+              )}
             </div>
+
+            {renderProviderDetection('google')}
           </div>
 
           {/* OpenRouter Configuration */}
@@ -429,27 +676,46 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </div>
             </div>
 
+            {renderBaseUrlField('openrouter', showOpenRouterBaseUrl, setShowOpenRouterBaseUrl, 'https://openrouter.ai/api/v1')}
+
             <div>
               <label className="block text-sm font-medium mb-2">Model</label>
-              <select
-                value={tempSettings.openrouter.model}
-                onChange={(e) => updateProvider('openrouter', 'model', e.target.value)}
-                disabled={tempSettings.aiProvider !== 'openrouter'}
-                className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
-              >
-                <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
-                <option value="anthropic/claude-3-haiku">Claude 3 Haiku</option>
-                <option value="openai/gpt-4o">GPT-4o</option>
-                <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
-                <option value="openai/gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                <option value="google/gemini-pro-1.5">Gemini Pro 1.5</option>
-                <option value="meta-llama/llama-3.1-405b-instruct">Llama 3.1 405B</option>
-                <option value="meta-llama/llama-3.1-70b-instruct">Llama 3.1 70B</option>
-                <option value="mistralai/mistral-large">Mistral Large</option>
-                <option value="cohere/command-r-plus">Command R+</option>
-                <option value="deepseek/deepseek-chat-v3-0324:free">DeepSeek Chat V3 (Free)</option>
-              </select>
+              {providerModels.openrouter.length > 0 ? (
+                <select
+                  value={tempSettings.openrouter.model}
+                  onChange={(e) => updateProvider('openrouter', 'model', e.target.value)}
+                  disabled={tempSettings.aiProvider !== 'openrouter'}
+                  className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+                >
+                  {providerModels.openrouter.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <select
+                  value={tempSettings.openrouter.model}
+                  onChange={(e) => updateProvider('openrouter', 'model', e.target.value)}
+                  disabled={tempSettings.aiProvider !== 'openrouter'}
+                  className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+                >
+                  <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                  <option value="anthropic/claude-3-haiku">Claude 3 Haiku</option>
+                  <option value="openai/gpt-4o">GPT-4o</option>
+                  <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+                  <option value="openai/gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                  <option value="google/gemini-pro-1.5">Gemini Pro 1.5</option>
+                  <option value="meta-llama/llama-3.1-405b-instruct">Llama 3.1 405B</option>
+                  <option value="meta-llama/llama-3.1-70b-instruct">Llama 3.1 70B</option>
+                  <option value="mistralai/mistral-large">Mistral Large</option>
+                  <option value="cohere/command-r-plus">Command R+</option>
+                  <option value="deepseek/deepseek-chat-v3-0324:free">DeepSeek Chat V3 (Free)</option>
+                </select>
+              )}
             </div>
+
+            {renderProviderDetection('openrouter')}
           </div>
 
           {/* Audio Settings */}

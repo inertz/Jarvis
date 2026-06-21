@@ -19,25 +19,36 @@ const defaultSettings: AppSettings = {
     name: 'OpenAI',
     apiKey: '',
     model: 'gpt-3.5-turbo',
-    enabled: false
+    enabled: false,
+    baseUrl: 'https://api.openai.com/v1'
   },
   deepseek: {
     name: 'DeepSeek',
     apiKey: '',
     model: 'deepseek-chat',
-    enabled: false
+    enabled: false,
+    baseUrl: 'https://api.deepseek.com/v1'
   },
   google: {
     name: 'Google AI',
     apiKey: '',
     model: 'gemini-pro',
-    enabled: false
+    enabled: false,
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta'
   },
   openrouter: {
     name: 'OpenRouter',
     apiKey: '',
     model: 'anthropic/claude-3.5-sonnet',
-    enabled: false
+    enabled: false,
+    baseUrl: 'https://openrouter.ai/api/v1'
+  },
+  nvidia: {
+    name: 'NVIDIA',
+    apiKey: '',
+    model: 'meta/llama-3.1-70b-instruct',
+    enabled: false,
+    baseUrl: 'https://integrate.api.nvidia.com/v1'
   }
 };
 
@@ -294,6 +305,8 @@ function App() {
         return settings.google.enabled && settings.google.apiKey ? `Google ${settings.google.model}` : 'Google AI (Not Configured)';
       case 'openrouter':
         return settings.openrouter.enabled && settings.openrouter.apiKey && settings.openrouter.apiKey.trim() ? `OpenRouter ${settings.openrouter.model}` : 'OpenRouter (Not Configured)';
+      case 'nvidia':
+        return settings.nvidia.enabled && settings.nvidia.apiKey.trim() ? `NVIDIA ${settings.nvidia.model}` : 'NVIDIA (Not Configured)';
       default:
         return 'Local AI';
     }
@@ -311,6 +324,8 @@ function App() {
         return (settings.google.enabled && settings.google.apiKey.trim()) ? 'text-green-400' : 'text-yellow-400';
       case 'openrouter':
         return (settings.openrouter.enabled && settings.openrouter.apiKey && settings.openrouter.apiKey.trim()) ? 'text-green-400' : 'text-yellow-400';
+      case 'nvidia':
+        return (settings.nvidia.enabled && settings.nvidia.apiKey.trim()) ? 'text-green-400' : 'text-yellow-400';
       default:
         return 'text-green-400'; // Local is always "configured"
     }

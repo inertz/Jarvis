@@ -1,9 +1,10 @@
 import { AppSettings } from '../types';
 
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
-const GOOGLE_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
-const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENAI_API_BASE_URL = 'https://api.openai.com/v1';
+const DEEPSEEK_API_BASE_URL = 'https://api.deepseek.com/v1';
+const GOOGLE_API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
+const OPENROUTER_API_BASE_URL = 'https://openrouter.ai/api/v1';
+const NVIDIA_API_BASE_URL = 'https://integrate.api.nvidia.com/v1';
 const DEFAULT_OLLAMA_API_URL = 'http://localhost:11434/api/chat';
 const ALLOWED_LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
 const SYSTEM_PROMPT = `You are JARVIS, Tony Stark's sophisticated AI assistant from Iron Man. You have a refined British personality and speak with intelligence, wit, and subtle humor.
@@ -40,6 +41,119 @@ export function validateLocalAdvancedBaseUrl(rawBaseUrl?: string): string {
   }
 
   return parsedUrl.origin + parsedUrl.pathname.replace(/\/$/, '');
+}
+
+function normalizeBaseUrl(rawBaseUrl: string | undefined, fallbackBaseUrl: string): string {
+  return (rawBaseUrl || fallbackBaseUrl).replace(/\/$/, '');
+}
+
+async function fetchJson(url: string, init?: RequestInit): Promise<any> {
+  const response = await fetch(url, init);
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function fetchOpenAIModels(rawBaseUrl?: string, apiKey?: string): Promise<string[]> {
+  if (!apiKey?.trim()) {
+    throw new Error('OpenAI API key is required');
+  }
+
+  const baseUrl = normalizeBaseUrl(rawBaseUrl, OPENAI_API_BASE_URL);
+  const data = await fetchJson(`${baseUrl}/models`, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+    },
+  });
+
+  return Array.isArray(data.data)
+    ? data.data
+        .map((model: { id?: string }) => model.id?.trim())
+        .filter((id: string | undefined): id is string => Boolean(id))
+        .sort()
+    : [];
+}
+
+export async function fetchDeepSeekModels(rawBaseUrl?: string, apiKey?: string): Promise<string[]> {
+  if (!apiKey?.trim()) {
+    throw new Error('DeepSeek API key is required');
+  }
+
+  const baseUrl = normalizeBaseUrl(rawBaseUrl, DEEPSEEK_API_BASE_URL);
+  const data = await fetchJson(`${baseUrl}/models`, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+    },
+  });
+
+  return Array.isArray(data.data)
+    ? data.data
+        .map((model: { id?: string }) => model.id?.trim())
+        .filter((id: string | undefined): id is string => Boolean(id))
+        .sort()
+    : [];
+}
+
+export async function fetchGoogleModels(rawBaseUrl?: string, apiKey?: string): Promise<string[]> {
+  if (!apiKey?.trim()) {
+    throw new Error('Google AI API key is required');
+  }
+
+  const baseUrl = normalizeBaseUrl(rawBaseUrl, GOOGLE_API_BASE_URL);
+  const data = await fetchJson(`${baseUrl}/models?key=${encodeURIComponent(apiKey)}`);
+
+  return Array.isArray(data.models)
+    ? data.models
+        .map((model: { name?: string; supportedGenerationMethods?: string[] }) => {
+          if (!model.supportedGenerationMethods?.includes('generateContent')) {
+            return undefined;
+          }
+          return model.name?.replace(/^models\//, '').trim();
+        })
+        .filter((name: string | undefined): name is string => Boolean(name))
+        .sort()
+    : [];
+}
+
+export async function fetchOpenRouterModels(rawBaseUrl?: string, apiKey?: string): Promise<string[]> {
+  const baseUrl = normalizeBaseUrl(rawBaseUrl, OPENROUTER_API_BASE_URL);
+  const headers: Record<string, string> = {};
+
+  if (apiKey?.trim()) {
+    headers.Authorization = `Bearer ${apiKey}`;
+  }
+
+  const data = await fetchJson(`${baseUrl}/models`, {
+    headers,
+  });
+
+  return Array.isArray(data.data)
+    ? data.data
+        .map((model: { id?: string }) => model.id?.trim())
+        .filter((id: string | undefined): id is string => Boolean(id))
+        .sort()
+    : [];
+}
+
+export async function fetchNvidiaModels(rawBaseUrl?: string, apiKey?: string): Promise<string[]> {
+  if (!apiKey?.trim()) {
+    throw new Error('NVIDIA API key is required');
+  }
+
+  const baseUrl = normalizeBaseUrl(rawBaseUrl, NVIDIA_API_BASE_URL);
+  const data = await fetchJson(`${baseUrl}/models`, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+    },
+  });
+
+  return Array.isArray(data.data)
+    ? data.data
+        .map((model: { id?: string }) => model.id?.trim())
+        .filter((id: string | undefined): id is string => Boolean(id))
+        .sort()
+    : [];
 }
 
 export async function fetchOllamaModels(rawBaseUrl?: string): Promise<string[]> {
@@ -109,6 +223,12 @@ export class AIService {
             return this.generateLocalResponse(userMessage);
           }
           return await this.callOpenRouter(userMessage);
+        case 'nvidia':
+          if (!this.settings.nvidia.enabled || !this.settings.nvidia.apiKey) {
+            console.warn('NVIDIA not configured, falling back to local responses');
+            return this.generateLocalResponse(userMessage);
+          }
+          return await this.callNvidia(userMessage);
         default:
           return this.generateLocalResponse(userMessage);
       }
@@ -127,7 +247,7 @@ export class AIService {
       },
       ...this.conversationHistory
     ];
-    const response = await fetch(OPENAI_API_URL, {
+    const response = await fetch(`${normalizeBaseUrl(this.settings.openai.baseUrl, OPENAI_API_BASE_URL)}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -165,7 +285,7 @@ export class AIService {
       },
       ...this.conversationHistory
     ];
-    const response = await fetch(DEEPSEEK_API_URL, {
+    const response = await fetch(`${normalizeBaseUrl(this.settings.deepseek.baseUrl, DEEPSEEK_API_BASE_URL)}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -210,7 +330,7 @@ Now, please respond to: ${userMessage}`
     });
 
     const modelName = this.settings.google.model || 'gemini-pro';
-    const response = await fetch(`${GOOGLE_API_URL}/${modelName}:generateContent?key=${this.settings.google.apiKey}`, {
+    const response = await fetch(`${normalizeBaseUrl(this.settings.google.baseUrl, GOOGLE_API_BASE_URL)}/models/${modelName}:generateContent?key=${this.settings.google.apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -266,7 +386,7 @@ Now, please respond to: ${userMessage}`
       ...this.conversationHistory
     ];
 
-    const response = await fetch(OPENROUTER_API_URL, {
+    const response = await fetch(`${normalizeBaseUrl(this.settings.openrouter.baseUrl, OPENROUTER_API_BASE_URL)}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -332,6 +452,42 @@ Now, please respond to: ${userMessage}`
 
     const data = await response.json();
     const assistantResponse = data.message?.content || 'I apologize, sir. I encountered an issue processing your request.';
+
+    this.conversationHistory.push({ role: 'assistant', content: assistantResponse });
+
+    return assistantResponse;
+  }
+
+  private async callNvidia(userMessage: string): Promise<string> {
+    const messages = [
+      {
+        role: 'system',
+        content: SYSTEM_PROMPT
+      },
+      ...this.conversationHistory
+    ];
+
+    const response = await fetch(`${normalizeBaseUrl(this.settings.nvidia.baseUrl, NVIDIA_API_BASE_URL)}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.settings.nvidia.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: this.settings.nvidia.model || 'meta/llama-3.1-70b-instruct',
+        messages,
+        max_tokens: 300,
+        temperature: 0.8,
+        top_p: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`NVIDIA API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const assistantResponse = data.choices?.[0]?.message?.content || 'I apologize, sir. I encountered an issue processing your request.';
 
     this.conversationHistory.push({ role: 'assistant', content: assistantResponse });
 

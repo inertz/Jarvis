@@ -15,12 +15,13 @@ export interface AIProvider {
 
 export interface AppSettings {
   audioEnabled: boolean;
-  aiProvider: 'local' | 'localAdvanced' | 'openai' | 'deepseek' | 'google' | 'openrouter';
+  aiProvider: 'local' | 'localAdvanced' | 'openai' | 'deepseek' | 'google' | 'openrouter' | 'nvidia';
   localAdvanced: AIProvider;
   openai: AIProvider;
   deepseek: AIProvider;
   google: AIProvider;
   openrouter: AIProvider;
+  nvidia: AIProvider;
 }
 
 export interface APIResponse {

@@ -1,6 +1,6 @@
 # 🤖 Jarvis AI Assistant
 
-A sophisticated AI assistant mobile app inspired by Iron Man's JARVIS, featuring voice recognition, text-to-speech, and integration with local and cloud AI providers including Ollama, OpenAI, DeepSeek, Google AI, and OpenRouter.
+A sophisticated AI assistant mobile app inspired by Iron Man's JARVIS, featuring voice recognition, text-to-speech, and integration with local and cloud AI providers including Ollama, OpenAI, DeepSeek, Google AI, OpenRouter, and NVIDIA NIM.
 
 ![Jarvis AI Assistant](https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg?auto=compress&cs=tinysrgb&w=1200&h=600&fit=crop)
 
@@ -13,14 +13,17 @@ A sophisticated AI assistant mobile app inspired by Iron Man's JARVIS, featuring
 - **Voice Visualizer**: Real-time audio feedback during conversations
 
 ### 🤖 **AI Integration**
-- **Multiple AI Providers**: Choose between Local (Basic), Local (Advance), OpenAI GPT, DeepSeek, Google AI, or OpenRouter
+- **Multiple AI Providers**: Choose between Local (Basic), Local (Advance), OpenAI GPT, DeepSeek, Google AI, OpenRouter, or NVIDIA NIM
 - **Ollama Integration**: Connect to a local Ollama instance through `Local (Advance)`
 - **Automatic Ollama Detection**: Detect local Ollama models from the settings panel
 - **Test Ollama Connection**: Validate the local Ollama endpoint before saving settings
+- **Provider Model Detection**: Detect available models for OpenAI, DeepSeek, Google AI, OpenRouter, and NVIDIA NIM when a valid API key is provided
+- **Custom API Endpoints**: Configure provider-specific API URL endpoints directly in settings
 - **OpenAI GPT Support**: GPT-3.5 Turbo, GPT-4, and GPT-4 Turbo models
 - **DeepSeek Integration**: DeepSeek Chat and DeepSeek Coder models
 - **Google AI Integration**: Gemini Pro and Gemini Pro Vision models
 - **OpenRouter Integration**: Access to 100+ AI models through one API
+- **NVIDIA NIM Integration**: Access NVIDIA-hosted chat models through an OpenAI-compatible API
 - **Fallback System**: Automatically falls back to local responses if API fails
 - **Reduced Credential Persistence**: API keys are kept in app state and are not persisted to local storage
 
@@ -51,7 +54,7 @@ A sophisticated AI assistant mobile app inspired by Iron Man's JARVIS, featuring
 - Node.js 18+ 
 - npm or yarn
 - Ollama (optional, for Local Advance mode)
-- API keys for OpenAI, DeepSeek, Google AI, or OpenRouter (optional)
+- API keys for OpenAI, DeepSeek, Google AI, OpenRouter, or NVIDIA NIM (optional)
 
 ### Installation
 
@@ -99,29 +102,50 @@ Notes:
 1. Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)
 2. Open the app settings (gear icon)
 3. Select "OpenAI GPT" as your AI provider
-4. Enter your API key and choose your preferred model
-5. Enable the OpenAI integration
+4. Enter your API key
+5. Optionally change the `API URL Endpoint`
+6. Click **"Detect Models"** to load available models automatically
+7. Choose your preferred model and save
 
 #### DeepSeek Setup:
 1. Get your API key from [DeepSeek Platform](https://platform.deepseek.com/)
 2. Open the app settings (gear icon)
 3. Select "DeepSeek" as your AI provider
-4. Enter your API key and choose your preferred model
-5. Enable the DeepSeek integration
+4. Enter your API key
+5. Optionally change the `API URL Endpoint`
+6. Click **"Detect Models"** to load available models automatically
+7. Choose your preferred model and save
 
 #### Google AI Setup:
 1. Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
 2. Open the app settings (gear icon)
 3. Select "Google AI (Gemini)" as your AI provider
-4. Enter your API key and choose your preferred model
-5. Enable the Google AI integration
+4. Enter your API key
+5. Optionally change the `API URL Endpoint`
+6. Click **"Detect Models"** to load available Gemini models automatically
+7. Choose your preferred model and save
 
 #### OpenRouter Setup:
 1. Get your API key from [OpenRouter](https://openrouter.ai/keys)
 2. Open the app settings (gear icon)
 3. Select "OpenRouter" as your AI provider
-4. Enter your API key and choose from 100+ available models
-5. Enable the OpenRouter integration
+4. Enter your API key
+5. Optionally change the `API URL Endpoint`
+6. Click **"Detect Models"** to load available models automatically
+7. Choose your preferred model and save
+
+#### NVIDIA Setup:
+1. Get your API key from [NVIDIA Build / API Catalog](https://build.nvidia.com/)
+2. Open the app settings (gear icon)
+3. Select "NVIDIA NIM" as your AI provider
+4. Enter your API key
+5. Optionally change the `API URL Endpoint`
+6. Click **"Detect Models"** to load available NVIDIA-compatible models automatically
+7. Choose your preferred model and save
+
+Notes for cloud providers:
+- Model detection depends on the provider allowing browser-side access to its model-list endpoint
+- If a provider blocks the request with CORS or policy restrictions, the app will show the returned error in the settings panel
 
 ### 📲 Install as Mobile App
 
@@ -150,6 +174,7 @@ Notes:
 - **DeepSeek API** - Advanced AI model integration
 - **Google AI API** - Gemini models integration
 - **OpenRouter API** - Access to 100+ AI models
+- **NVIDIA API** - NVIDIA NIM and hosted model access
 
 ## 📁 Project Structure
 
@@ -189,10 +214,11 @@ jarvis-ai-assistant/
 ### AI Provider Features
 - **Local (Basic)**: Basic responses, works offline
 - **Local (Advance)**: Uses a local Ollama model with automatic model detection
-- **OpenAI GPT**: Advanced conversational AI with context awareness
-- **DeepSeek**: Specialized AI with coding and reasoning capabilities
-- **Google AI**: Powerful Gemini models with advanced reasoning
-- **OpenRouter**: Access to Claude, GPT, Llama, Gemini, and 100+ other models
+- **OpenAI GPT**: Advanced conversational AI with context awareness and model autodetection
+- **DeepSeek**: Specialized AI with coding and reasoning capabilities and model autodetection
+- **Google AI**: Powerful Gemini models with advanced reasoning and model autodetection
+- **OpenRouter**: Access to Claude, GPT, Llama, Gemini, and 100+ other models with model autodetection
+- **NVIDIA NIM**: Hosted NVIDIA-compatible chat models with model autodetection
 
 ### Text Input
 Type any message in the input field and press Enter or tap the send button.
@@ -200,9 +226,11 @@ Type any message in the input field and press Enter or tap the send button.
 ## ⚙️ Configuration
 
 ### AI Settings
-- **Provider Selection**: Choose between Local (Basic), Local (Advance), OpenAI, DeepSeek, Google AI, or OpenRouter
+- **Provider Selection**: Choose between Local (Basic), Local (Advance), OpenAI, DeepSeek, Google AI, OpenRouter, or NVIDIA NIM
 - **Ollama Detection**: Automatically discover local Ollama models
 - **Connection Testing**: Test the Ollama endpoint directly from settings
+- **Cloud Model Detection**: Detect supported models for OpenAI, DeepSeek, Google AI, OpenRouter, and NVIDIA NIM
+- **API URL Endpoints**: Override the default provider endpoints when needed
 - **API Key Management**: Show/hide input fields for cloud providers
 - **Model Selection**: Choose specific models for each provider
 - **Fallback System**: Automatic fallback to local responses
@@ -244,6 +272,7 @@ Important:
 - Cloud API keys are entered directly in the browser UI
 - The app does not persist those keys to local storage
 - Because this is a frontend-only app, browser-entered cloud API keys are still exposed to the client runtime
+- Some cloud provider model-detection requests may fail because of CORS or provider-side browser restrictions
 - For stronger security, route provider calls through your own backend
 
 ### Browser Compatibility
@@ -328,6 +357,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Built with modern web technologies
 - OpenAI for GPT model access
 - DeepSeek for advanced AI capabilities
+- NVIDIA for hosted model access
 - Special thanks to the React and Vite communities
 
 ## 📞 Support
@@ -341,6 +371,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [x] OpenAI GPT integration
 - [x] DeepSeek AI integration
 - [x] Google AI (Gemini) integration
+- [x] NVIDIA NIM integration
 - [x] Advanced settings panel
 - [x] Local Ollama integration
 - [x] Ollama auto-detection and connection testing

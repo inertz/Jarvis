@@ -24,6 +24,10 @@ function stripSensitiveSettings(settings: AppSettings): AppSettings {
       ...settings.openrouter,
       apiKey: '',
     },
+    nvidia: {
+      ...settings.nvidia,
+      apiKey: '',
+    },
   };
 }
 
@@ -48,24 +52,35 @@ function mergeWithDefaults(stored: any, defaults: AppSettings): AppSettings {
       enabled: stored.openai?.enabled ?? defaults.openai.enabled,
       apiKey: stored.openai?.apiKey || defaults.openai.apiKey,
       model: stored.openai?.model || defaults.openai.model,
+      baseUrl: stored.openai?.baseUrl || defaults.openai.baseUrl,
     },
     deepseek: {
       name: stored.deepseek?.name || defaults.deepseek.name,
       enabled: stored.deepseek?.enabled ?? defaults.deepseek.enabled,
       apiKey: stored.deepseek?.apiKey || defaults.deepseek.apiKey,
       model: stored.deepseek?.model || defaults.deepseek.model,
+      baseUrl: stored.deepseek?.baseUrl || defaults.deepseek.baseUrl,
     },
     google: {
       name: stored.google?.name || defaults.google.name,
       enabled: stored.google?.enabled ?? defaults.google.enabled,
       apiKey: stored.google?.apiKey || defaults.google.apiKey,
       model: stored.google?.model || defaults.google.model,
+      baseUrl: stored.google?.baseUrl || defaults.google.baseUrl,
     },
     openrouter: {
       name: stored.openrouter?.name || defaults.openrouter.name,
       enabled: stored.openrouter?.enabled ?? defaults.openrouter.enabled,
       apiKey: stored.openrouter?.apiKey || defaults.openrouter.apiKey,
       model: stored.openrouter?.model || defaults.openrouter.model,
+      baseUrl: stored.openrouter?.baseUrl || defaults.openrouter.baseUrl,
+    },
+    nvidia: {
+      name: stored.nvidia?.name || defaults.nvidia.name,
+      enabled: stored.nvidia?.enabled ?? defaults.nvidia.enabled,
+      apiKey: stored.nvidia?.apiKey || defaults.nvidia.apiKey,
+      model: stored.nvidia?.model || defaults.nvidia.model,
+      baseUrl: stored.nvidia?.baseUrl || defaults.nvidia.baseUrl,
     },
   };
 }
