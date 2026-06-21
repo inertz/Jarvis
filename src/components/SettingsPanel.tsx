@@ -127,6 +127,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <p className="mt-2 text-xs text-gray-400">
                 Enter any installed Ollama model name, for example `llama3.2`, `qwen2.5-coder`, or `mistral`.
               </p>
+              <p className="mt-2 text-xs text-yellow-300">
+                For safety, only localhost Ollama endpoints are allowed.
+              </p>
             </div>
           </div>
 

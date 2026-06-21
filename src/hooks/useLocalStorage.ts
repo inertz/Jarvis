@@ -1,6 +1,32 @@
 import { useState, useEffect } from 'react';
 import { AppSettings } from '../types';
 
+function stripSensitiveSettings(settings: AppSettings): AppSettings {
+  return {
+    ...settings,
+    localAdvanced: {
+      ...settings.localAdvanced,
+      apiKey: '',
+    },
+    openai: {
+      ...settings.openai,
+      apiKey: '',
+    },
+    deepseek: {
+      ...settings.deepseek,
+      apiKey: '',
+    },
+    google: {
+      ...settings.google,
+      apiKey: '',
+    },
+    openrouter: {
+      ...settings.openrouter,
+      apiKey: '',
+    },
+  };
+}
+
 // Helper function to deep merge settings with defaults
 function mergeWithDefaults(stored: any, defaults: AppSettings): AppSettings {
   if (!stored || typeof stored !== 'object') {
@@ -66,6 +92,10 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T)
   const setValue = (value: T) => {
     try {
       setStoredValue(value);
+      if (key === 'jarvis-settings') {
+        window.localStorage.setItem(key, JSON.stringify(stripSensitiveSettings(value as unknown as AppSettings)));
+        return;
+      }
       window.localStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
       console.error(`Error setting localStorage key "${key}":`, error);

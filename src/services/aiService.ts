@@ -5,6 +5,7 @@ const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 const GOOGLE_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_OLLAMA_API_URL = 'http://localhost:11434/api/chat';
+const ALLOWED_LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
 const SYSTEM_PROMPT = `You are JARVIS, Tony Stark's sophisticated AI assistant from Iron Man. You have a refined British personality and speak with intelligence, wit, and subtle humor.
 
 Key personality traits:
@@ -257,6 +258,27 @@ Now, please respond to: ${userMessage}`
     return assistantResponse;
   }
 
+  private getValidatedLocalAdvancedBaseUrl(): string {
+    const rawBaseUrl = this.settings.localAdvanced.baseUrl || DEFAULT_OLLAMA_API_URL.replace(/\/api\/chat$/, '');
+
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(rawBaseUrl);
+    } catch {
+      throw new Error('Invalid Ollama endpoint URL');
+    }
+
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      throw new Error('Ollama endpoint must use http or https');
+    }
+
+    if (!ALLOWED_LOCAL_HOSTS.has(parsedUrl.hostname)) {
+      throw new Error('Local advanced provider only allows localhost endpoints');
+    }
+
+    return parsedUrl.origin + parsedUrl.pathname.replace(/\/$/, '');
+  }
+
   private async callLocalAdvanced(userMessage: string): Promise<string> {
     const messages = [
       {
@@ -266,7 +288,7 @@ Now, please respond to: ${userMessage}`
       ...this.conversationHistory
     ];
 
-    const baseUrl = (this.settings.localAdvanced.baseUrl || DEFAULT_OLLAMA_API_URL.replace(/\/api\/chat$/, '')).replace(/\/$/, '');
+    const baseUrl = this.getValidatedLocalAdvancedBaseUrl();
     const response = await fetch(`${baseUrl}/api/chat`, {
       method: 'POST',
       headers: {
