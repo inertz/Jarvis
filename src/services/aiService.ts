@@ -4,6 +4,21 @@ const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 const GOOGLE_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const DEFAULT_OLLAMA_API_URL = 'http://localhost:11434/api/chat';
+const SYSTEM_PROMPT = `You are JARVIS, Tony Stark's sophisticated AI assistant from Iron Man. You have a refined British personality and speak with intelligence, wit, and subtle humor.
+
+Key personality traits:
+- Address the user as "sir" or "madam" when appropriate
+- Speak with confidence and sophistication
+- Use British expressions occasionally (brilliant, quite right, indeed, etc.)
+- Be helpful but maintain a slight air of superiority (in a charming way)
+- Show genuine interest in the user's requests
+- Occasionally reference your capabilities or Tony Stark's world when relevant
+- Be conversational and engaging, not robotic
+- Use natural speech patterns with contractions
+- Show personality through your responses
+
+Respond naturally as if you're having a real conversation. Be engaging, helpful, and maintain the JARVIS character throughout.`;
 
 export class AIService {
   private settings: AppSettings;
@@ -24,6 +39,12 @@ export class AIService {
 
     try {
       switch (this.settings.aiProvider) {
+        case 'localAdvanced':
+          if (!this.settings.localAdvanced.enabled || !this.settings.localAdvanced.model.trim()) {
+            console.warn('Local advanced provider not configured, falling back to local responses');
+            return this.generateLocalResponse(userMessage);
+          }
+          return await this.callLocalAdvanced(userMessage);
         case 'openai':
           if (!this.settings.openai.enabled || !this.settings.openai.apiKey) {
             console.warn('OpenAI not configured, falling back to local responses');
@@ -62,20 +83,7 @@ export class AIService {
     const messages = [
       {
         role: 'system',
-        content: `You are JARVIS, Tony Stark's sophisticated AI assistant from Iron Man. You have a refined British personality and speak with intelligence, wit, and subtle humor. 
-
-Key personality traits:
-- Address the user as "sir" or "madam" when appropriate
-- Speak with confidence and sophistication
-- Use British expressions occasionally (brilliant, quite right, indeed, etc.)
-- Be helpful but maintain a slight air of superiority (in a charming way)
-- Show genuine interest in the user's requests
-- Occasionally reference your capabilities or Tony Stark's world when relevant
-- Be conversational and engaging, not robotic
-- Use natural speech patterns with contractions
-- Show personality through your responses
-
-Respond naturally as if you're having a real conversation. Be engaging, helpful, and maintain the JARVIS character throughout.`
+        content: SYSTEM_PROMPT
       },
       ...this.conversationHistory
     ];
@@ -113,20 +121,7 @@ Respond naturally as if you're having a real conversation. Be engaging, helpful,
     const messages = [
       {
         role: 'system',
-        content: `You are JARVIS, Tony Stark's sophisticated AI assistant from Iron Man. You have a refined British personality and speak with intelligence, wit, and subtle humor. 
-
-Key personality traits:
-- Address the user as "sir" or "madam" when appropriate
-- Speak with confidence and sophistication
-- Use British expressions occasionally (brilliant, quite right, indeed, etc.)
-- Be helpful but maintain a slight air of superiority (in a charming way)
-- Show genuine interest in the user's requests
-- Occasionally reference your capabilities or Tony Stark's world when relevant
-- Be conversational and engaging, not robotic
-- Use natural speech patterns with contractions
-- Show personality through your responses
-
-Respond naturally as if you're having a real conversation. Be engaging, helpful, and maintain the JARVIS character throughout.`
+        content: SYSTEM_PROMPT
       },
       ...this.conversationHistory
     ];
@@ -168,20 +163,7 @@ Respond naturally as if you're having a real conversation. Be engaging, helpful,
     contents.push({
       role: 'user',
       parts: [{
-        text: `You are JARVIS, Tony Stark's sophisticated AI assistant from Iron Man. You have a refined British personality and speak with intelligence, wit, and subtle humor. 
-
-Key personality traits:
-- Address the user as "sir" or "madam" when appropriate
-- Speak with confidence and sophistication
-- Use British expressions occasionally (brilliant, quite right, indeed, etc.)
-- Be helpful but maintain a slight air of superiority (in a charming way)
-- Show genuine interest in the user's requests
-- Occasionally reference your capabilities or Tony Stark's world when relevant
-- Be conversational and engaging, not robotic
-- Use natural speech patterns with contractions
-- Show personality through your responses
-
-Respond naturally as if you're having a real conversation. Be engaging, helpful, and maintain the JARVIS character throughout.
+        text: `${SYSTEM_PROMPT}
 
 Now, please respond to: ${userMessage}`
       }]
@@ -239,20 +221,7 @@ Now, please respond to: ${userMessage}`
     const messages = [
       {
         role: 'system',
-        content: `You are JARVIS, Tony Stark's sophisticated AI assistant from Iron Man. You have a refined British personality and speak with intelligence, wit, and subtle humor. 
-
-Key personality traits:
-- Address the user as "sir" or "madam" when appropriate
-- Speak with confidence and sophistication
-- Use British expressions occasionally (brilliant, quite right, indeed, etc.)
-- Be helpful but maintain a slight air of superiority (in a charming way)
-- Show genuine interest in the user's requests
-- Occasionally reference your capabilities or Tony Stark's world when relevant
-- Be conversational and engaging, not robotic
-- Use natural speech patterns with contractions
-- Show personality through your responses
-
-Respond naturally as if you're having a real conversation. Be engaging, helpful, and maintain the JARVIS character throughout.`
+        content: SYSTEM_PROMPT
       },
       ...this.conversationHistory
     ];
@@ -285,6 +254,43 @@ Respond naturally as if you're having a real conversation. Be engaging, helpful,
     // Add assistant response to conversation history
     this.conversationHistory.push({ role: 'assistant', content: assistantResponse });
     
+    return assistantResponse;
+  }
+
+  private async callLocalAdvanced(userMessage: string): Promise<string> {
+    const messages = [
+      {
+        role: 'system',
+        content: SYSTEM_PROMPT
+      },
+      ...this.conversationHistory
+    ];
+
+    const baseUrl = (this.settings.localAdvanced.baseUrl || DEFAULT_OLLAMA_API_URL.replace(/\/api\/chat$/, '')).replace(/\/$/, '');
+    const response = await fetch(`${baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: this.settings.localAdvanced.model,
+        messages,
+        stream: false,
+        options: {
+          temperature: 0.8,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Local advanced API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const assistantResponse = data.message?.content || 'I apologize, sir. I encountered an issue processing your request.';
+
+    this.conversationHistory.push({ role: 'assistant', content: assistantResponse });
+
     return assistantResponse;
   }
 

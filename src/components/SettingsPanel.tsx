@@ -13,6 +13,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onSettingsChange,
   onClose
 }) => {
+  const [showLocalAdvancedEndpoint, setShowLocalAdvancedEndpoint] = useState(false);
   const [showOpenAIKey, setShowOpenAIKey] = useState(false);
   const [showDeepSeekKey, setShowDeepSeekKey] = useState(false);
   const [showGoogleKey, setShowGoogleKey] = useState(false);
@@ -24,7 +25,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     onClose();
   };
 
-  const updateProvider = (provider: 'openai' | 'deepseek' | 'google' | 'openrouter', field: string, value: string | boolean) => {
+  const updateProvider = (provider: 'localAdvanced' | 'openai' | 'deepseek' | 'google' | 'openrouter', field: string, value: string | boolean) => {
     setTempSettings(prev => ({
       ...prev,
       [provider]: {
@@ -53,10 +54,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <label className="block text-sm font-medium mb-3">AI Provider</label>
             <div className="space-y-2">
               {[
-                { value: 'local', label: 'Local (Basic)', icon: Cpu },
-                { value: 'openai', label: 'OpenAI GPT', icon: Zap },
-                { value: 'deepseek', label: 'DeepSeek', icon: Globe },
-                { value: 'google', label: 'Google AI (Gemini)', icon: Brain },
+              { value: 'local', label: 'Local (Basic)', icon: Cpu },
+              { value: 'localAdvanced', label: 'Local (Advance)', icon: Cpu },
+              { value: 'openai', label: 'OpenAI GPT', icon: Zap },
+              { value: 'deepseek', label: 'DeepSeek', icon: Globe },
+              { value: 'google', label: 'Google AI (Gemini)', icon: Brain },
                 { value: 'openrouter', label: 'OpenRouter', icon: Network }
               ].map(({ value, label, icon: Icon }) => (
                 <label key={value} className="flex items-center space-x-3 p-3 rounded-lg border border-jarvis-blue/30 hover:bg-jarvis-blue/10 cursor-pointer">
@@ -72,6 +74,59 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   <span>{label}</span>
                 </label>
               ))}
+            </div>
+          </div>
+
+          {/* Local Advanced Configuration */}
+          <div className={`space-y-4 p-4 rounded-lg border ${tempSettings.aiProvider === 'localAdvanced' ? 'border-jarvis-blue/50 bg-jarvis-blue/5' : 'border-gray-600 opacity-50'}`}>
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-jarvis-blue">Local (Advance) Configuration</h4>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={tempSettings.localAdvanced.enabled}
+                  onChange={(e) => updateProvider('localAdvanced', 'enabled', e.target.checked)}
+                  disabled={tempSettings.aiProvider !== 'localAdvanced'}
+                  className="text-jarvis-blue focus:ring-jarvis-blue"
+                />
+                <span className="text-sm">Enabled</span>
+              </label>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Ollama Endpoint</label>
+              <div className="relative">
+                <input
+                  type={showLocalAdvancedEndpoint ? 'text' : 'password'}
+                  value={tempSettings.localAdvanced.baseUrl || ''}
+                  onChange={(e) => updateProvider('localAdvanced', 'baseUrl', e.target.value)}
+                  disabled={tempSettings.aiProvider !== 'localAdvanced'}
+                  placeholder="http://localhost:11434"
+                  className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 pr-10 text-white placeholder-gray-400 focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLocalAdvancedEndpoint(!showLocalAdvancedEndpoint)}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-jarvis-blue/20 rounded"
+                >
+                  {showLocalAdvancedEndpoint ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Model</label>
+              <input
+                type="text"
+                value={tempSettings.localAdvanced.model}
+                onChange={(e) => updateProvider('localAdvanced', 'model', e.target.value)}
+                disabled={tempSettings.aiProvider !== 'localAdvanced'}
+                placeholder="llama3.2"
+                className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+              />
+              <p className="mt-2 text-xs text-gray-400">
+                Enter any installed Ollama model name, for example `llama3.2`, `qwen2.5-coder`, or `mistral`.
+              </p>
             </div>
           </div>
 

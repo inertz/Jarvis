@@ -10,11 +10,13 @@ export interface AIProvider {
   apiKey: string;
   model: string;
   enabled: boolean;
+  baseUrl?: string;
 }
 
 export interface AppSettings {
   audioEnabled: boolean;
-  aiProvider: 'local' | 'openai' | 'deepseek' | 'google' | 'openrouter';
+  aiProvider: 'local' | 'localAdvanced' | 'openai' | 'deepseek' | 'google' | 'openrouter';
+  localAdvanced: AIProvider;
   openai: AIProvider;
   deepseek: AIProvider;
   google: AIProvider;

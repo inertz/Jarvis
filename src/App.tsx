@@ -8,6 +8,13 @@ import { Message, AppSettings } from './types';
 const defaultSettings: AppSettings = {
   audioEnabled: true,
   aiProvider: 'local',
+  localAdvanced: {
+    name: 'Local (Advance)',
+    apiKey: '',
+    model: 'llama3.2',
+    enabled: false,
+    baseUrl: 'http://localhost:11434'
+  },
   openai: {
     name: 'OpenAI',
     apiKey: '',
@@ -90,9 +97,13 @@ function App() {
 
   // Initialize speech recognition
   useEffect(() => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognitionInstance = new SpeechRecognition();
+    const speechWindow = window as Window & {
+      SpeechRecognition?: new () => SpeechRecognition;
+      webkitSpeechRecognition?: new () => SpeechRecognition;
+    };
+    const SpeechRecognitionConstructor = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+    if (SpeechRecognitionConstructor) {
+      const recognitionInstance = new SpeechRecognitionConstructor();
       
       recognitionInstance.continuous = false;
       recognitionInstance.interimResults = false;
@@ -105,7 +116,7 @@ function App() {
         }
       };
 
-      recognitionInstance.onresult = (event) => {
+      recognitionInstance.onresult = (event: SpeechRecognitionEvent) => {
         const transcript = event.results[0][0].transcript;
         setInputText(transcript);
         setIsListening(false);
@@ -271,6 +282,10 @@ function App() {
 
   const getProviderStatus = () => {
     switch (settings.aiProvider) {
+      case 'localAdvanced':
+        return settings.localAdvanced.enabled && settings.localAdvanced.model.trim()
+          ? `Local (Advance) ${settings.localAdvanced.model}`
+          : 'Local (Advance) (Not Configured)';
       case 'openai':
         return settings.openai.enabled && settings.openai.apiKey ? `OpenAI ${settings.openai.model}` : 'OpenAI (Not Configured)';
       case 'deepseek':
@@ -286,6 +301,8 @@ function App() {
 
   const getProviderColor = () => {
     switch (settings.aiProvider) {
+      case 'localAdvanced':
+        return (settings.localAdvanced.enabled && settings.localAdvanced.model.trim()) ? 'text-green-400' : 'text-yellow-400';
       case 'openai':
         return (settings.openai.enabled && settings.openai.apiKey.trim()) ? 'text-green-400' : 'text-yellow-400';
       case 'deepseek':
