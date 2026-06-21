@@ -21,6 +21,45 @@ Key personality traits:
 
 Respond naturally as if you're having a real conversation. Be engaging, helpful, and maintain the JARVIS character throughout.`;
 
+export function validateLocalAdvancedBaseUrl(rawBaseUrl?: string): string {
+  const resolvedBaseUrl = rawBaseUrl || DEFAULT_OLLAMA_API_URL.replace(/\/api\/chat$/, '');
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(resolvedBaseUrl);
+  } catch {
+    throw new Error('Invalid Ollama endpoint URL');
+  }
+
+  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+    throw new Error('Ollama endpoint must use http or https');
+  }
+
+  if (!ALLOWED_LOCAL_HOSTS.has(parsedUrl.hostname)) {
+    throw new Error('Local advanced provider only allows localhost endpoints');
+  }
+
+  return parsedUrl.origin + parsedUrl.pathname.replace(/\/$/, '');
+}
+
+export async function fetchOllamaModels(rawBaseUrl?: string): Promise<string[]> {
+  const baseUrl = validateLocalAdvancedBaseUrl(rawBaseUrl);
+  const response = await fetch(`${baseUrl}/api/tags`);
+
+  if (!response.ok) {
+    throw new Error(`Unable to fetch Ollama models: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const models = Array.isArray(data.models)
+    ? data.models
+        .map((model: { name?: string }) => model.name?.trim())
+        .filter((name: string | undefined): name is string => Boolean(name))
+    : [];
+
+  return models;
+}
+
 export class AIService {
   private settings: AppSettings;
   private conversationHistory: Array<{role: 'user' | 'assistant', content: string}> = [];
@@ -259,24 +298,7 @@ Now, please respond to: ${userMessage}`
   }
 
   private getValidatedLocalAdvancedBaseUrl(): string {
-    const rawBaseUrl = this.settings.localAdvanced.baseUrl || DEFAULT_OLLAMA_API_URL.replace(/\/api\/chat$/, '');
-
-    let parsedUrl: URL;
-    try {
-      parsedUrl = new URL(rawBaseUrl);
-    } catch {
-      throw new Error('Invalid Ollama endpoint URL');
-    }
-
-    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-      throw new Error('Ollama endpoint must use http or https');
-    }
-
-    if (!ALLOWED_LOCAL_HOSTS.has(parsedUrl.hostname)) {
-      throw new Error('Local advanced provider only allows localhost endpoints');
-    }
-
-    return parsedUrl.origin + parsedUrl.pathname.replace(/\/$/, '');
+    return validateLocalAdvancedBaseUrl(this.settings.localAdvanced.baseUrl);
   }
 
   private async callLocalAdvanced(userMessage: string): Promise<string> {

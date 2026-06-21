@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Eye, EyeOff, Cpu, Zap, Globe, Brain, Network } from 'lucide-react';
 import { AppSettings } from '../types';
+import { fetchOllamaModels } from '../services/aiService';
 
 interface SettingsPanelProps {
   settings: AppSettings;
@@ -19,11 +20,86 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const [showGoogleKey, setShowGoogleKey] = useState(false);
   const [showOpenRouterKey, setShowOpenRouterKey] = useState(false);
   const [tempSettings, setTempSettings] = useState<AppSettings>(settings);
+  const [ollamaModels, setOllamaModels] = useState<string[]>([]);
+  const [isLoadingOllamaModels, setIsLoadingOllamaModels] = useState(false);
+  const [ollamaStatus, setOllamaStatus] = useState<string>('');
 
   const handleSave = () => {
     onSettingsChange(tempSettings);
     onClose();
   };
+
+  const detectOllamaModels = async () => {
+    setIsLoadingOllamaModels(true);
+    try {
+      const models = await fetchOllamaModels(tempSettings.localAdvanced.baseUrl);
+      setOllamaModels(models);
+      if (models.length > 0) {
+        setOllamaStatus(`Connection successful. Detected ${models.length} Ollama model${models.length === 1 ? '' : 's'}.`);
+        setTempSettings(prev => ({
+          ...prev,
+          localAdvanced: {
+            ...prev.localAdvanced,
+            enabled: true,
+            model: prev.localAdvanced.model.trim() || models[0],
+          },
+        }));
+      } else {
+        setOllamaStatus('Connection successful, but no installed Ollama models were found.');
+      }
+    } catch (error) {
+      setOllamaModels([]);
+      setOllamaStatus(error instanceof Error ? error.message : 'Unable to reach Ollama.');
+    } finally {
+      setIsLoadingOllamaModels(false);
+    }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadOllamaModels = async () => {
+      try {
+        const models = await fetchOllamaModels(tempSettings.localAdvanced.baseUrl);
+        if (cancelled) {
+          return;
+        }
+
+        setOllamaModels(models);
+        if (models.length > 0) {
+          setOllamaStatus(`Detected ${models.length} Ollama model${models.length === 1 ? '' : 's'}.`);
+          setTempSettings(prev => ({
+            ...prev,
+            localAdvanced: {
+              ...prev.localAdvanced,
+              enabled: true,
+              model: prev.localAdvanced.model.trim() || models[0],
+            },
+          }));
+        } else {
+          setOllamaStatus('Ollama is reachable, but no installed models were found.');
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setOllamaModels([]);
+          setOllamaStatus(error instanceof Error ? error.message : 'Unable to reach Ollama.');
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingOllamaModels(false);
+        }
+      }
+    };
+
+    if (tempSettings.aiProvider === 'localAdvanced') {
+      setIsLoadingOllamaModels(true);
+      void loadOllamaModels();
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tempSettings.aiProvider, tempSettings.localAdvanced.baseUrl]);
 
   const updateProvider = (provider: 'localAdvanced' | 'openai' | 'deepseek' | 'google' | 'openrouter', field: string, value: string | boolean) => {
     setTempSettings(prev => ({
@@ -67,7 +143,13 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     name="aiProvider"
                     value={value}
                     checked={tempSettings.aiProvider === value}
-                    onChange={(e) => setTempSettings(prev => ({ ...prev, aiProvider: e.target.value as any }))}
+                    onChange={(e) => setTempSettings(prev => ({
+                      ...prev,
+                      aiProvider: e.target.value as AppSettings['aiProvider'],
+                      localAdvanced: e.target.value === 'localAdvanced'
+                        ? { ...prev.localAdvanced, enabled: true }
+                        : prev.localAdvanced
+                    }))}
                     className="text-jarvis-blue focus:ring-jarvis-blue"
                   />
                   <Icon size={20} className="text-jarvis-blue" />
@@ -112,23 +194,49 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   {showLocalAdvancedEndpoint ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              <button
+                type="button"
+                onClick={() => void detectOllamaModels()}
+                disabled={tempSettings.aiProvider !== 'localAdvanced' || isLoadingOllamaModels}
+                className="mt-3 w-full bg-jarvis-blue/20 hover:bg-jarvis-blue/30 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 rounded-lg transition-colors"
+              >
+                {isLoadingOllamaModels ? 'Testing Connection...' : 'Test Ollama Connection'}
+              </button>
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-2">Model</label>
-              <input
-                type="text"
-                value={tempSettings.localAdvanced.model}
-                onChange={(e) => updateProvider('localAdvanced', 'model', e.target.value)}
-                disabled={tempSettings.aiProvider !== 'localAdvanced'}
-                placeholder="llama3.2"
-                className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
-              />
+              {ollamaModels.length > 0 ? (
+                <select
+                  value={tempSettings.localAdvanced.model}
+                  onChange={(e) => updateProvider('localAdvanced', 'model', e.target.value)}
+                  disabled={tempSettings.aiProvider !== 'localAdvanced'}
+                  className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+                >
+                  {ollamaModels.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={tempSettings.localAdvanced.model}
+                  onChange={(e) => updateProvider('localAdvanced', 'model', e.target.value)}
+                  disabled={tempSettings.aiProvider !== 'localAdvanced'}
+                  placeholder="llama3.2"
+                  className="w-full bg-black/50 border border-jarvis-blue/30 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-jarvis-blue disabled:opacity-50"
+                />
+              )}
               <p className="mt-2 text-xs text-gray-400">
                 Enter any installed Ollama model name, for example `llama3.2`, `qwen2.5-coder`, or `mistral`.
               </p>
               <p className="mt-2 text-xs text-yellow-300">
                 For safety, only localhost Ollama endpoints are allowed.
+              </p>
+              <p className={`mt-2 text-xs ${ollamaStatus.includes('Detected') ? 'text-green-300' : 'text-yellow-300'}`}>
+                {isLoadingOllamaModels ? 'Detecting local Ollama models...' : ollamaStatus}
               </p>
             </div>
           </div>

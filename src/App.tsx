@@ -283,7 +283,7 @@ function App() {
   const getProviderStatus = () => {
     switch (settings.aiProvider) {
       case 'localAdvanced':
-        return settings.localAdvanced.enabled && settings.localAdvanced.model.trim()
+        return settings.localAdvanced.enabled && settings.localAdvanced.model.trim() && settings.aiProvider === 'localAdvanced'
           ? `Local (Advance) ${settings.localAdvanced.model}`
           : 'Local (Advance) (Not Configured)';
       case 'openai':

@@ -1,6 +1,6 @@
 # 🤖 Jarvis AI Assistant
 
-A sophisticated AI assistant mobile app inspired by Iron Man's JARVIS, featuring voice recognition, text-to-speech, and integration with advanced AI providers like OpenAI and DeepSeek.
+A sophisticated AI assistant mobile app inspired by Iron Man's JARVIS, featuring voice recognition, text-to-speech, and integration with local and cloud AI providers including Ollama, OpenAI, DeepSeek, Google AI, and OpenRouter.
 
 ![Jarvis AI Assistant](https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg?auto=compress&cs=tinysrgb&w=1200&h=600&fit=crop)
 
@@ -13,13 +13,16 @@ A sophisticated AI assistant mobile app inspired by Iron Man's JARVIS, featuring
 - **Voice Visualizer**: Real-time audio feedback during conversations
 
 ### 🤖 **AI Integration**
-- **Multiple AI Providers**: Choose between Local, OpenAI GPT, or DeepSeek
+- **Multiple AI Providers**: Choose between Local (Basic), Local (Advance), OpenAI GPT, DeepSeek, Google AI, or OpenRouter
+- **Ollama Integration**: Connect to a local Ollama instance through `Local (Advance)`
+- **Automatic Ollama Detection**: Detect local Ollama models from the settings panel
+- **Test Ollama Connection**: Validate the local Ollama endpoint before saving settings
 - **OpenAI GPT Support**: GPT-3.5 Turbo, GPT-4, and GPT-4 Turbo models
 - **DeepSeek Integration**: DeepSeek Chat and DeepSeek Coder models
 - **Google AI Integration**: Gemini Pro and Gemini Pro Vision models
 - **OpenRouter Integration**: Access to 100+ AI models through one API
 - **Fallback System**: Automatically falls back to local responses if API fails
-- **Secure API Key Storage**: Encrypted local storage for API credentials
+- **Reduced Credential Persistence**: API keys are kept in app state and are not persisted to local storage
 
 ### 📱 **Mobile-First Design**
 - **Progressive Web App (PWA)**: Install as a native app on any device
@@ -47,7 +50,8 @@ A sophisticated AI assistant mobile app inspired by Iron Man's JARVIS, featuring
 ### Prerequisites
 - Node.js 18+ 
 - npm or yarn
-- API keys for OpenAI, DeepSeek, or Google AI (optional)
+- Ollama (optional, for Local Advance mode)
+- API keys for OpenAI, DeepSeek, Google AI, or OpenRouter (optional)
 
 ### Installation
 
@@ -74,7 +78,22 @@ A sophisticated AI assistant mobile app inspired by Iron Man's JARVIS, featuring
 
 ### 🔑 API Configuration
 
-Free testing API from [OpenAI Platform](https://hdstockimages.com/get-free-openai-chatgpt-api/)
+#### Local (Advance) / Ollama Setup:
+1. Install and run [Ollama](https://ollama.com/)
+2. Pull at least one model, for example:
+   ```bash
+   ollama pull llama3.2
+   ```
+3. Open the app settings (gear icon)
+4. Select "Local (Advance)" as your AI provider
+5. Keep the endpoint as `http://localhost:11434`
+6. Click **"Test Ollama Connection"**
+7. Choose one of the detected models and save
+
+Notes:
+- Only localhost Ollama endpoints are allowed by the app
+- If Ollama is running, the settings panel will try to detect models automatically
+- `Local (Basic)` is still available as an offline fallback without Ollama
 
 #### OpenAI Setup:
 1. Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)
@@ -168,7 +187,8 @@ jarvis-ai-assistant/
 - **"Thank you"** - Polite acknowledgment
 
 ### AI Provider Features
-- **Local Mode**: Basic responses, works offline
+- **Local (Basic)**: Basic responses, works offline
+- **Local (Advance)**: Uses a local Ollama model with automatic model detection
 - **OpenAI GPT**: Advanced conversational AI with context awareness
 - **DeepSeek**: Specialized AI with coding and reasoning capabilities
 - **Google AI**: Powerful Gemini models with advanced reasoning
@@ -180,8 +200,10 @@ Type any message in the input field and press Enter or tap the send button.
 ## ⚙️ Configuration
 
 ### AI Settings
-- **Provider Selection**: Choose between Local, OpenAI, DeepSeek, Google AI, or OpenRouter
-- **API Key Management**: Secure storage with show/hide functionality
+- **Provider Selection**: Choose between Local (Basic), Local (Advance), OpenAI, DeepSeek, Google AI, or OpenRouter
+- **Ollama Detection**: Automatically discover local Ollama models
+- **Connection Testing**: Test the Ollama endpoint directly from settings
+- **API Key Management**: Show/hide input fields for cloud providers
 - **Model Selection**: Choose specific models for each provider
 - **Fallback System**: Automatic fallback to local responses
 
@@ -216,7 +238,13 @@ npm run lint
 
 ### Environment Setup
 
-The app stores API keys securely in local storage. No environment variables are required for basic functionality.
+No environment variables are required for basic functionality.
+
+Important:
+- Cloud API keys are entered directly in the browser UI
+- The app does not persist those keys to local storage
+- Because this is a frontend-only app, browser-entered cloud API keys are still exposed to the client runtime
+- For stronger security, route provider calls through your own backend
 
 ### Browser Compatibility
 
@@ -267,8 +295,9 @@ The app stores API keys securely in local storage. No environment variables are 
 
 ## 🔒 Security
 
-- **API Key Encryption**: Keys are stored securely in local storage
+- **No Persistent API Key Storage**: Cloud API keys are not written to local storage
 - **No Server Storage**: All data remains on your device
+- **Local Ollama Restriction**: `Local (Advance)` only allows localhost Ollama endpoints
 - **HTTPS Required**: PWA features require secure connection
 - **Privacy First**: No data is sent to third parties except chosen AI providers
 
@@ -313,7 +342,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [x] DeepSeek AI integration
 - [x] Google AI (Gemini) integration
 - [x] Advanced settings panel
-- [x] Secure API key storage
+- [x] Local Ollama integration
+- [x] Ollama auto-detection and connection testing
+- [x] Reduced API key persistence
 - [x] OpenRouter integration (100+ models)
 - [ ] Conversation history export
 - [ ] Custom voice training
