@@ -19,17 +19,17 @@ A sophisticated AI assistant mobile app inspired by Iron Man's JARVIS, featuring
 - **Test Ollama Connection**: Validate the local Ollama endpoint before saving settings
 - **Provider Model Detection**: Detect available models for OpenAI, DeepSeek, Google AI, OpenRouter, and NVIDIA NIM when a valid API key is provided
 - **Custom API Endpoints**: Configure provider-specific API URL endpoints directly in settings
-- **OpenAI GPT Support**: GPT-3.5 Turbo, GPT-4, and GPT-4 Turbo models
-- **DeepSeek Integration**: DeepSeek Chat and DeepSeek Coder models
-- **Google AI Integration**: Gemini Pro and Gemini Pro Vision models
+- **OpenAI GPT Support**: OpenAI-compatible chat completion models
+- **DeepSeek Integration**: DeepSeek chat models
+- **Google AI Integration**: Gemini models supported by the configured endpoint
 - **OpenRouter Integration**: Access to 100+ AI models through one API
 - **NVIDIA NIM Integration**: Access NVIDIA-hosted chat models through an OpenAI-compatible API
 - **Fallback System**: Automatically falls back to local responses if API fails
-- **Reduced Credential Persistence**: API keys are kept in app state and are not persisted to local storage
+- **Reduced Credential Persistence**: API keys are stripped before settings are written back to local storage
 
 ### 📱 **Mobile-First Design**
 - **Progressive Web App (PWA)**: Install as a native app on any device
-- **Offline Support**: Works without internet connection (local mode)
+- **Local Fallback Mode**: `Local (Basic)` works without a cloud provider
 - **iOS Safe Area**: Full iPhone/iPad compatibility including notch support
 - **Haptic Feedback**: Tactile responses for better user experience
 - **Touch Optimized**: Large buttons and gesture-friendly interface
@@ -45,14 +45,14 @@ A sophisticated AI assistant mobile app inspired by Iron Man's JARVIS, featuring
 - **Conversational AI**: Natural language processing and responses
 - **Context Awareness**: Intelligent replies based on conversation history
 - **Time & Date**: Current time and date information
-- **System Status**: Battery, connection, and device information
+- **Connection Awareness**: Local responses can react to online/offline status
 - **Professional Personality**: British assistant personality like the original JARVIS
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js 18+ 
-- npm or yarn
+- npm, pnpm, or yarn
 - Ollama (optional, for Local Advance mode)
 - API keys for OpenAI, DeepSeek, Google AI, OpenRouter, or NVIDIA NIM (optional)
 
@@ -146,6 +146,7 @@ Notes:
 Notes for cloud providers:
 - Model detection depends on the provider allowing browser-side access to its model-list endpoint
 - If a provider blocks the request with CORS or policy restrictions, the app will show the returned error in the settings panel
+- API keys are entered directly in the browser UI, so this setup is best suited to local or personal use unless you add a backend proxy
 
 ### 📲 Install as Mobile App
 
@@ -212,7 +213,7 @@ jarvis-ai-assistant/
 - **"Thank you"** - Polite acknowledgment
 
 ### AI Provider Features
-- **Local (Basic)**: Basic responses, works offline
+- **Local (Basic)**: Basic built-in responses without a cloud provider
 - **Local (Advance)**: Uses a local Ollama model with automatic model detection
 - **OpenAI GPT**: Advanced conversational AI with context awareness and model autodetection
 - **DeepSeek**: Specialized AI with coding and reasoning capabilities and model autodetection
@@ -238,10 +239,10 @@ Type any message in the input field and press Enter or tap the send button.
 ### Audio Settings
 - **Voice Output Toggle**: Enable/disable text-to-speech
 - **British Accent**: Automatic selection of British voice
-- **Adjustable Parameters**: Speech rate, pitch, and volume
+- **Speech Tuning**: Speech rate, pitch, and volume are fixed in code
 
 ### PWA Settings
-- **Offline Functionality**: Works without internet
+- **Installable App Shell**: Includes a manifest and PWA build configuration
 - **Custom App Icons**: Professional Jarvis-themed icons
 - **Standalone Display**: Full-screen app experience
 - **Auto-update**: Automatic updates when available
@@ -270,7 +271,7 @@ No environment variables are required for basic functionality.
 
 Important:
 - Cloud API keys are entered directly in the browser UI
-- The app does not persist those keys to local storage
+- The app strips API keys before saving settings back to local storage
 - Because this is a frontend-only app, browser-entered cloud API keys are still exposed to the client runtime
 - Some cloud provider model-detection requests may fail because of CORS or provider-side browser restrictions
 - For stronger security, route provider calls through your own backend
@@ -284,26 +285,14 @@ Important:
 
 ## 💰 API Costs
 
-### OpenAI Pricing (Approximate)
-- **GPT-3.5 Turbo**: ~$0.002 per 1K tokens
-- **GPT-4**: ~$0.03 per 1K tokens
-- **GPT-4 Turbo**: ~$0.01 per 1K tokens
+Pricing changes frequently and depends on the selected provider and model.
 
-### DeepSeek Pricing (Approximate)
-- **DeepSeek Chat**: ~$0.0014 per 1K tokens
-- **DeepSeek Coder**: ~$0.0014 per 1K tokens
-
-### Google AI Pricing (Approximate)
-- **Gemini Pro**: Free tier available, then ~$0.0005 per 1K tokens
-- **Gemini Pro Vision**: ~$0.0025 per 1K tokens
-
-### OpenRouter Pricing (Approximate)
-- **Claude 3.5 Sonnet**: ~$0.003 per 1K tokens
-- **GPT-4o**: ~$0.005 per 1K tokens
-- **Llama 3.1 405B**: ~$0.003 per 1K tokens
-- **Many free models available**
-
-*Note: Prices may vary. Check provider websites for current pricing.*
+Check the provider pricing pages directly before relying on a cost estimate:
+- OpenAI: https://platform.openai.com/pricing
+- DeepSeek: https://platform.deepseek.com/
+- Google AI: https://ai.google.dev/pricing
+- OpenRouter: https://openrouter.ai/models
+- NVIDIA: https://build.nvidia.com/
 
 ## 🚀 Deployment
 
@@ -324,7 +313,7 @@ Important:
 
 ## 🔒 Security
 
-- **No Persistent API Key Storage**: Cloud API keys are not written to local storage
+- **Reduced API Key Persistence**: Cloud API keys are stripped before settings are written to local storage
 - **No Server Storage**: All data remains on your device
 - **Local Ollama Restriction**: `Local (Advance)` only allows localhost Ollama endpoints
 - **HTTPS Required**: PWA features require secure connection
@@ -377,6 +366,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [x] Ollama auto-detection and connection testing
 - [x] Reduced API key persistence
 - [x] OpenRouter integration (100+ models)
+- [ ] Backend proxy for secure cloud API key handling
 - [ ] Conversation history export
 - [ ] Custom voice training
 - [ ] Weather and news integration
